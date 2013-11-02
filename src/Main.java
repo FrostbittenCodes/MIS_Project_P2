@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.EOFException;
 
 public class Main 
 {
@@ -64,6 +66,7 @@ public class Main
         //Quantizer
         //UniformQuantize(fx, "output.csv", 8);
         HashMap<String,String> result = EO1(fx,16,"output.csv");
+        double r = DO1(result, 16);
     }
     
     //Given a multivariate time series (in csv form with each line as a different sensor), returns an array
@@ -406,12 +409,12 @@ public class Main
         
     }
     
-    public static double Decode(HashMap<String,String> symbolTable, int scheme)
+    public static double Decode(HashMap<String,String> symbolTable, int scheme, int r)
     {
         switch(scheme)
         {
             case 1:
-                return DO1(symbolTable,scheme);
+                return DO1(symbolTable,r);
             case 2:
                 //return DO2(symbolTable,scheme);
             case 3:
@@ -432,7 +435,7 @@ public class Main
         double data[][] = ReadData(series);
         HashMap<String,String> symbolTable = new HashMap();
         int symbolCounter = 0;
-       
+        
         try
         {       
             DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
@@ -440,9 +443,6 @@ public class Main
             {
                 for (int i = 0; i < data[j].length;i++)
                 {
-                    // Fill up hash map.  Cast to string
-                    // Then check if value is in map.
-                    // Shouldn't use doubles as keys, unsafe.
                     String sKey = String.valueOf(data[j][i]);
                     String s = symbolTable.get(sKey);
                     if (s == null)
@@ -469,12 +469,9 @@ public class Main
                 for (int i = 0; i < data[j].length;i++)
                 {                    
                     String symbol = symbolTable.get(String.valueOf(data[j][i]));
-                    //System.out.println("Currently writing " + symbol + " to file");
                     if (symbol != null) 
-                    {
-                        buffer <<= 1; // shift to make space for new bit
+                    {  
                         char[] c = symbol.toCharArray();
-                        int cur = 0;
                         for (int k = 0; k < c.length; k++)
                         {
                             if (bitCounter == 32)
@@ -484,16 +481,13 @@ public class Main
                                 bitCounter = 0;
                                 buffersWritten++;
                             }
-                            
-                            if (k == '0')
+                            buffer <<= 1; // shift to make space for new bit
+                            if (c[k] == '0')
                                 buffer |= 0;  // pack a zero
                             else
                                 buffer |= 1;  // otherwise pack a 1
-                            cur++;
                             bitCounter++;
-                        }
-                        //System.out.println("Wrote " + cur + " bits for the above symbol");
-                        
+                        }                        
                     }
                     else
                         System.out.println("Critical error: symbol not found");
@@ -511,7 +505,7 @@ public class Main
             System.out.println("Symbols written: " + symbolCounter);
             System.out.println("Buffers written: " + buffersWritten);
         }catch(FileNotFoundException e){
-            System.out.print("I/O file open failure");
+            System.out.println("I/O file open failure");
         }catch(IOException e){
             System.out.println("I/O binary write failure");
         }
@@ -519,16 +513,83 @@ public class Main
         return symbolTable;
     }
     
-    public static double DO1(HashMap<String,String> symbolTable, int scheme)
+    public static double DO1(HashMap<String,String> symbolTable, int r)
     {
         int symbolCount = 0;
+        int symbolsRead = 0;
+        int buffer;
+        int bitMask = 1;
+        bitMask <<= 31; // move one all the way over to the MSB
+        int columnCount = 0;    
+        int bitCounter = 0;
+        int buffersRead = 0;
+        System.out.println("Bitmask value: " + bitMask);
+        
+
         try 
         {
             DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            symbolCount = dis.readInt();
+            columnCount = symbolCount / 20;
+            double[][] data = new double[20][columnCount];
+            Integer curInt;
+            buffer = dis.readInt();
+            System.out.println("Buffer is: " + buffer);
+            System.out.println("First buffer value: " + symbolCount);
+            for (int j = 0; j < 20; j++)
+            {
+                for (int i = 0; i < columnCount; i++)
+                {
+                    String symbol = "";
+                    for (int k = 0; k < r; k++)
+                    {
+                        if (bitCounter == 32)
+                        {
+                            buffer = dis.readInt();
+                            System.out.println("Buffer is " + buffer);
+                            bitCounter = 0;
+                            buffersRead++;
+                        }
+                        
+                        if ((buffer & bitMask) == bitMask) // bit is set
+                        {
+                            symbol = symbol.concat("1");
+                        }
+                        else // bit is not set
+                        {
+                            symbol = symbol.concat("0");
+                        }
+                        buffer <<= 1;
+                        bitCounter++;
+                    }
+                    System.out.println("Symbol: " + symbol);
+                    // Look up symbol in map and get key.
+                    // If found, write to array.
+                    for (String key : symbolTable.keySet())
+                    {
+                        if ((symbolTable.get(key)).equals(symbol))
+                        {
+                            data[j][i] = Double.parseDouble(key);
+                            symbolsRead++; 
+                            break;
+                        }
+                    }               
+                }
+            }
+            System.out.println("Symbols read: " + symbolsRead);
             
+ 
+            WriteData(data,"decode.csv");
+        }
+        catch(EOFException e){
+            System.out.println("End of file.");
+            System.out.println(symbolsRead + " symbols read.");
         }
         catch(FileNotFoundException e){
-            e.printStackTrace();
+            System.out.println("I/O file open failure");
+        }
+        catch(IOException e){
+            System.out.println("I/O binary read failure");
         }
         
         
@@ -539,6 +600,7 @@ public class Main
         double data[][] = ReadData(series);
         HashMap<String,String> symbolTable = new HashMap();
         int symbolCounter = 0;
+        int r = 0;
         
         try 
         {

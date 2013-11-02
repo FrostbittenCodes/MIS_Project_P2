@@ -2,12 +2,15 @@
 //Quick and dirty java implementation of phase one for CSE 408 project 1
 
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class Main 
 {
@@ -57,7 +60,10 @@ public class Main
         */
         
         //Quantizer
-        Quantize(fx, 3, "output.csv", 8);
+        //Quantize(fx, 3, "output.csv", 8);
+        
+        //Visualizer
+        //VisualizeNoise(fx, "output.csv");
     }
     
     //Given a multivariate time series (in csv form with each line as a different sensor), returns an array
@@ -517,6 +523,150 @@ public class Main
     }
     // </editor-fold>
     
+    //Currently doesn't calculate noise, but outputs the appropriate visual stuff
+    public static void VisualizeNoise(String f1, String f2)
+    // <editor-fold>
+    {
+        BufferedReader input1;
+        BufferedReader input2;
+        String outputfile = "output.bmp";
+        double[][] data1 = new double[20][];
+        double[][] data2 = new double[20][];
+        double[][] diff = new double[20][];
+        int B = 1; //Beta value
+        int maxlength;
+        int[] imagedata;
+        int width;
+        int padding = 20;
+        int thickness = 10;
+        int height = thickness*20 + 22*padding;
+        int color1 = 0x0000ff; //lower color
+        int color2 = 0xff0000; //upper color
+        BufferedImage output;
+        int background = 0xffffff;
+        
+        
+        //Open the two file readers
+        try
+        {
+            input1 = new BufferedReader(new FileReader(f1));
+            input2 = new BufferedReader(new FileReader(f2));
+        }
+        catch(FileNotFoundException e)
+        {
+            System.err.println(e);
+            return;
+        }
+        
+        //Read and parse the data for files
+        try
+        {
+            String line;
+            //Executes 20 times (for the given data sets)
+            for(int j = 0; j < 20; j++)
+            {
+                //Read and parse data for file 1
+                line = input1.readLine();
+                String temp[] = line.split(",");
+                data1[j] = new double[temp.length];
+                for(int i = 0; i < temp.length; i++)
+                {
+                    data1[j][i] = Double.parseDouble(temp[i]);
+                }
+                //Read and parse data for file 2
+                line = input2.readLine();
+                temp = line.split(",");
+                data2[j] = new double[temp.length];
+                for(int i = 0; i < temp.length; i++)
+                {
+                    data2[j][i] = Double.parseDouble(temp[i]);
+                }
+            }
+        }
+        catch(IOException e)
+        {
+            System.err.println(e);
+        }
+        
+        //Figure out which data set is longer, and store maxlength
+        if(data1[0].length > data1[0].length)
+            maxlength = data1[0].length;
+        else
+            maxlength = data2[0].length;
+        
+        //Calculate the difference and perform scaling (outer loop runs 20 times, inner runs variable (maxlength) amount)
+        for(int j = 0; j < 20; j++)
+        {
+            double max = 0;
+            diff[j] = new double[maxlength];
+            for(int i = 0; i < maxlength; i++)
+            {
+                if((data1[j].length > i) && (data2[j].length > i))
+                {
+                    diff[j][i] = Math.abs(data1[j][i]-data2[j][i]);
+                }
+                else if(data1[j].length > i)
+                {
+                    diff[j][i] = Math.abs(data1[j][i]);
+                }
+                else
+                {
+                    diff[j][i] = Math.abs(data2[j][i]);
+                }
+                if(diff[j][i] > max)
+                    max = diff[j][i];
+            }
+            //scale by max in sensor set
+            for(int i = 0; i < maxlength; i++)
+            {
+                diff[j][i] = diff[j][i]/max;
+                diff[j][i] = Math.pow(diff[j][i], B);
+            }
+        }
+        
+        int temp[] = new int[maxlength*20];
+        for(int j = 0; j < 20; j++)
+        {
+            for(int i = 0; i < diff[j].length; i++)
+            {
+                temp[(maxlength*j)+i] = getRGBColor(color1, color2, diff[j][i]);
+            }
+        }
+        //Set image width and instantiate imagedata/image
+        width = maxlength*thickness + 2*padding;
+        imagedata = new int[width*height];
+        output = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        
+        //Draw background then populate imagedata
+        for(int i = 0; i < imagedata.length; i++)
+            imagedata[i] = background;
+        for(int j = 0; j < 20; j++)
+        {
+            int r,q;
+            for(int i = 0; i < diff[j].length; i++)
+            {
+                //Sets integers in appropriate width x width area
+                // to the specified color rgb value calculated from above
+                for(r = 0; r < thickness; r++)
+                    for(q = 0; q < thickness; q++)
+                        imagedata[(padding + j*(thickness+padding)+r)*width + (padding+i*thickness + q)] = temp[(maxlength*j)+i];
+            }
+        }
+        
+        //Create image from data and write to file
+        output.setRGB(0, 0, width, height, imagedata, 0, width);
+        try
+        {
+            ImageIO.write(output, "bmp", new File(outputfile));
+            System.out.println("Image successfully generated");
+        }
+        catch(IOException e)
+        {
+            System.err.println(e);
+        }
+    }
+    // </editor-fold>
+    
     //Everything below this line is a supporting function (e.g. read/write arrays from/to files)
     //------------------------------------------------------------------------------------------
     // <editor-fold desc="Supporting Functions" defaultstate="collapsed">
@@ -635,6 +785,34 @@ public class Main
         return Math.pow(1+Math.exp(0.0054-1.6101*temp-0.0674*Math.pow(temp, 3)),-1);
     }
 
+    //Helper method for scaling and interpolating RGB values
+    public static int getRGBColor(int c1, int c2, double in)
+    {
+        int c1r, c1b, c1g;
+        int c2r, c2b, c2g;
+        int c12r, c12b, c12g;
+        int result;
+        
+        //unpack components in c1/c2
+        c1b = c1&0x0000ff;
+        c2b = c2&0x0000ff;
+        c1g = (c1>>8)&0x0000ff;
+        c2g = (c2 >> 8)&0x0000ff;
+        c1r = (c1>>16)&0x0000ff;
+        c2r = (c2 >> 16)&0x0000ff;
+        
+        //calculate direction vector
+        c12r = c2r-c1r;
+        c12g = c2g-c1g;
+        c12b = c2b-c1b;
+        
+        //scale, repack, and return
+        result = (int) (c1r+in*c12r);
+        result = (result << 8) | (int) (c1g+in*c12g);
+        result = (result << 8) | (int) (c1b+in*c12b); 
+        
+        return result;
+    }
     
     // </editor-fold>
 }

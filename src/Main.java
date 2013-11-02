@@ -10,6 +10,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.PriorityQueue;
 import java.util.HashMap;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.DataInputStream;
 
 public class Main 
 {
@@ -59,7 +62,8 @@ public class Main
         */
         
         //Quantizer
-        UniformQuantize(fx, "output.csv", 8);
+        //UniformQuantize(fx, "output.csv", 8);
+        HashMap<String,String> result = EO1(fx,16,"output.csv");
     }
     
     //Given a multivariate time series (in csv form with each line as a different sensor), returns an array
@@ -377,7 +381,7 @@ public class Main
     // </editor-fold>
     
     
-    public static double Encode(String series, String output, int r, int scheme)
+    public static HashMap<String,String> Encode(String series, String output, int r, int scheme)
     {
         switch(scheme)
         {
@@ -398,50 +402,176 @@ public class Main
             
             
         }
-        return 0;
+        return null;
         
     }
     
-    public static double EO1(String series, int r, String output)
+    public static double Decode(HashMap<String,String> symbolTable, int scheme)
+    {
+        switch(scheme)
+        {
+            case 1:
+                return DO1(symbolTable,scheme);
+            case 2:
+                //return DO2(symbolTable,scheme);
+            case 3:
+                //return DO3(symbolTable,scheme);
+            case 4:
+                //return DO4(symbolTable,scheme);
+            
+            default:
+                break;
+        }
+        
+        
+        return 0;
+    }
+    
+    public static HashMap<String,String> EO1(String series, int r, String output)
     {
         double data[][] = ReadData(series);
         HashMap<String,String> symbolTable = new HashMap();
         int symbolCounter = 0;
-        int numColumns = data[0].length;
-        for (int j = 0; j < 20; j++)
-        {
-            for (int i = 0; i < data[j].length;i++)
+       
+        try
+        {       
+            DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
+            for (int j = 0; j < 20; j++)
             {
-                // Fill up hash map.  Cast  
-                // Then check if value is in 
-                String sKey = String.valueOf(data[j][i]);
-                String s = symbolTable.get(sKey);
-                if (s == null)
+                for (int i = 0; i < data[j].length;i++)
                 {
-                    String binStr = Integer.toBinaryString(symbolCounter);
-                    while (binStr.length() < r){
-                        // Add leading zeroes back to binary representation
-                        binStr = "0".concat(binStr);
+                    // Fill up hash map.  Cast to string
+                    // Then check if value is in map.
+                    // Shouldn't use doubles as keys, unsafe.
+                    String sKey = String.valueOf(data[j][i]);
+                    String s = symbolTable.get(sKey);
+                    if (s == null)
+                    {
+                        String binStr = Integer.toBinaryString(symbolCounter);
+                        while (binStr.length() < r){
+                            // Add leading zeroes back to binary representation                                                   
+                            binStr = "0".concat(binStr);
+                        }
+                        symbolTable.put(sKey,binStr);
                     }
-                    symbolTable.put(sKey,Integer.toBinaryString(symbolCounter));
-                    symbolCounter++;
+                    symbolCounter++; // keeping track of how many symbols are written
+                    // should be 30*20
                 }
             }
+
+            int bitCounter = 0;
+            int buffer = 0;
+            int buffersWritten = 0;
+            out.writeInt(symbolCounter); // first 32 bits in message 
+                                         // are total # of symbols
+            for (int j = 0; j < 20; j++)
+            {
+                for (int i = 0; i < data[j].length;i++)
+                {                    
+                    String symbol = symbolTable.get(String.valueOf(data[j][i]));
+                    //System.out.println("Currently writing " + symbol + " to file");
+                    if (symbol != null) 
+                    {
+                        buffer <<= 1; // shift to make space for new bit
+                        char[] c = symbol.toCharArray();
+                        int cur = 0;
+                        for (int k = 0; k < c.length; k++)
+                        {
+                            if (bitCounter == 32)
+                            {
+                                out.writeInt(buffer);
+                                buffer = 0;
+                                bitCounter = 0;
+                                buffersWritten++;
+                            }
+                            
+                            if (k == '0')
+                                buffer |= 0;  // pack a zero
+                            else
+                                buffer |= 1;  // otherwise pack a 1
+                            cur++;
+                            bitCounter++;
+                        }
+                        //System.out.println("Wrote " + cur + " bits for the above symbol");
+                        
+                    }
+                    else
+                        System.out.println("Critical error: symbol not found");
+                }
+            }
+            
+            // After writing everything, see if the integer is not fully packed
+            if (bitCounter != 0)
+            {
+                buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
+                out.writeInt(buffer);
+                buffersWritten++;
+            }
+            
+            System.out.println("Symbols written: " + symbolCounter);
+            System.out.println("Buffers written: " + buffersWritten);
+        }catch(FileNotFoundException e){
+            System.out.print("I/O file open failure");
+        }catch(IOException e){
+            System.out.println("I/O binary write failure");
+        }
+ 
+        return symbolTable;
+    }
+    
+    public static double DO1(HashMap<String,String> symbolTable, int scheme)
+    {
+        int symbolCount = 0;
+        try 
+        {
+            DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            
+        }
+        catch(FileNotFoundException e){
+            e.printStackTrace();
         }
         
-        int bitCounter = 0;
         
-        for (int j = 0; j < 20; j++)
+        return 0;
+    }
+    public static HashMap<String,String> E02(String series, String output)
+    {
+        double data[][] = ReadData(series);
+        HashMap<String,String> symbolTable = new HashMap();
+        int symbolCounter = 0;
+        
+        try 
         {
-            for (int i = 0; i < data[j].length;i++)
+            DataOutputStream out = new DataOutputStream(new FileOutputStream("encode.bin"));
+            for (int j = 0; j < 20; j++)
             {
-                
-                
+                for (int i = 0; i < data[j].length;i++)
+                {
+                    // Fill up hash map.  Cast to string
+                    // Then check if value is in map.
+                    // Shouldn't use doubles as keys, unsafe.
+                    String sKey = String.valueOf(data[j][i]);
+                    String s = symbolTable.get(sKey);
+                    if (s == null)
+                    {
+                        String binStr = Integer.toBinaryString(symbolCounter);
+                        while (binStr.length() < r){
+                            // Add leading zeroes back to binary representation                                                   
+                            binStr = "0".concat(binStr);
+                        }
+                        symbolTable.put(sKey,binStr);
+                    }
+                    symbolCounter++; // keeping track of how many symbols are written
+                    // should be 30*20
+                }
             }
             
         }
+        catch(FileNotFoundException e){
+        }
         
-        return 0;
+        
+        return symbolTable;
     }
     //Everything below this line is a supporting function (e.g. read/write arrays from/to files)
     //------------------------------------------------------------------------------------------

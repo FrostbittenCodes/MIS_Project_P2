@@ -8,6 +8,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.PriorityQueue;
+import java.util.HashMap;
 
 public class Main 
 {
@@ -374,6 +376,73 @@ public class Main
     }
     // </editor-fold>
     
+    
+    public static double Encode(String series, String output, int r, int scheme)
+    {
+        switch(scheme)
+        {
+            case 1:
+                return EO1(series,r,output);
+                
+            case 2:
+//                return E02(series,output);
+                
+            case 3:
+//                return E03(series,output);
+                
+            case 4:
+                break;
+                
+            default:
+                break;
+            
+            
+        }
+        return 0;
+        
+    }
+    
+    public static double EO1(String series, int r, String output)
+    {
+        double data[][] = ReadData(series);
+        HashMap<String,String> symbolTable = new HashMap();
+        int symbolCounter = 0;
+        int numColumns = data[0].length;
+        for (int j = 0; j < 20; j++)
+        {
+            for (int i = 0; i < data[j].length;i++)
+            {
+                // Fill up hash map.  Cast  
+                // Then check if value is in 
+                String sKey = String.valueOf(data[j][i]);
+                String s = symbolTable.get(sKey);
+                if (s == null)
+                {
+                    String binStr = Integer.toBinaryString(symbolCounter);
+                    while (binStr.length() < r){
+                        // Add leading zeroes back to binary representation
+                        binStr = "0".concat(binStr);
+                    }
+                    symbolTable.put(sKey,Integer.toBinaryString(symbolCounter));
+                    symbolCounter++;
+                }
+            }
+        }
+        
+        int bitCounter = 0;
+        
+        for (int j = 0; j < 20; j++)
+        {
+            for (int i = 0; i < data[j].length;i++)
+            {
+                
+                
+            }
+            
+        }
+        
+        return 0;
+    }
     //Everything below this line is a supporting function (e.g. read/write arrays from/to files)
     //------------------------------------------------------------------------------------------
     // <editor-fold desc="Supporting Functions" defaultstate="collapsed">

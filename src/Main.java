@@ -57,7 +57,7 @@ public class Main
         */
         
         //Quantizer
-        UniformQuantize(fx, "output.csv", 8);
+        Quantize(fx, 3, "output.csv", 8);
     }
     
     //Given a multivariate time series (in csv form with each line as a different sensor), returns an array
@@ -332,10 +332,10 @@ public class Main
                 UniformQuantize(series, output, r);
                 return;
             case 2:
-                GaussianQuantize();
+                GaussianQuantize(series, output, r);
                 return;
             case 3:
-                ReverseGaussianQuantize();
+                ReverseGaussianQuantize(series, output, r);
                 return;
             default:
                 System.err.println("Invalid scheme");
@@ -350,27 +350,170 @@ public class Main
         double levels = Math.pow(2,r);
         double levelsize = ((max-min)/(levels-1));
         double[][] data = ReadData(series);
+        double[][] lookup = new double[2][(int)levels];
         
-        for(int j = 0; j < 20; j++)
+        //populate lookup table entries
+        lookup[0][0] = Double.NEGATIVE_INFINITY;
+        lookup[0][1] = min+levelsize/2;
+        for(int i = 0; i < levels; i++)
         {
-            for(int i = 0; i < data[j].length; i++)
+            if(i > 1)
+                lookup[0][i] = lookup[0][i-1]+levelsize;
+            lookup[1][i] = min+i*levelsize;
+        }
+        
+        //Quantize using lookup table
+        for(int k = 0; k < 20; k++)
+        {
+            for(int j = 0; j < data[k].length; j++)
             {
-                data[j][i] = ((Math.round((data[j][i] + max)/levelsize))*levelsize)-max;
+                for(int i = 0; i < levels-1; i++)
+                {
+                    if(data[k][j] >= lookup[0][i+1]){}
+                    else
+                    {
+                        data[k][j] = lookup[1][i];
+                        break;
+                    }
+                }
             }
         }
         WriteData(data, output);
     }
     
     //Quantizes the data according to Gaussian Distributions
-    public static void GaussianQuantize()
+    public static void GaussianQuantize(String series, String output, int r)
     {
+        double max =  2;
+        double min = -2;
+        double levels = Math.pow(2,r);
+        double levelsize = ((max-min)/(levels-1));
+        double[][] data = ReadData(series);
+        double[][] lookup = new double[2][(int)levels];
+        double[] tempvals = new double[(int)levels];
         
+        //Equal bands
+        for(int i = 0; i < levels; i++)
+        {
+            tempvals[i] = min+i*levelsize;
+        }
+        
+        //Gaussian bands (mirrored it to make it symmetrical
+        // if not mirrored, fp errors do strange things to it
+        double sum = min;
+        
+        lookup[1][0] = -2;
+        lookup[0][0] = Double.NEGATIVE_INFINITY;
+        for(int i = 1; i < levels/2; i++)
+        {
+            double temp = cdf(tempvals[i]) - cdf(tempvals[i-1]);
+            sum+=temp*(max-min);
+            lookup[1][i] = sum;
+            lookup[1][(int)levels-i] = -lookup[1][i-1];
+        }
+        lookup[1][(int)levels/2] = -lookup[1][(int)levels/2-1];
+        
+        
+        //Populate the rest of the lookup table
+        for(int i = 1; i < levels; i++)
+        {
+            if(i > 1)
+                lookup[0][i] = (lookup[1][i-1] + lookup[1][i])/2;
+            else
+                lookup[0][i] = (min + lookup[1][i])/2;
+        }
+        
+        
+        //Quantize using lookup table
+        for(int k = 0; k < 20; k++)
+        {
+            for(int j = 0; j < data[k].length; j++)
+            {
+                for(int i = 0; i < levels-1; i++)
+                {
+                    if(data[k][j] >= lookup[0][i+1]){}
+                    else
+                    {
+                        data[k][j] = lookup[1][i];
+                        break;
+                    }
+                }
+            }
+        }
+        WriteData(data, output);
     }
     
     //Quantizes the data according to Reverse Gaussian Distributions
-    public static void ReverseGaussianQuantize()
+    public static void ReverseGaussianQuantize(String series, String output, int r)
     {
+        double max =  2;
+        double min = -2;
+        double levels = Math.pow(2,r);
+        double levelsize = ((max-min)/(levels-1));
+        double[][] data = ReadData(series);
+        double[][] lookup = new double[2][(int)levels];
+        double[] tempvals = new double[(int)levels];
         
+        //Equal bands
+        for(int i = 0; i < levels; i++)
+        {
+            tempvals[i] = min+i*levelsize;
+        }
+        
+        //Gaussian bands (mirrored it to make it symmetrical
+        // if not mirrored, fp errors make the positives slightly different
+        double sum = 0;
+        
+        lookup[1][0] = -2;
+        lookup[0][0] = Double.NEGATIVE_INFINITY;
+        for(int i = 1; i < levels/2; i++)
+        {
+            double temp = cdf(tempvals[i]) - cdf(tempvals[i-1]);
+            sum+=temp*(min-max);
+            lookup[1][i] = sum;
+        }
+
+        //Reverse the generated stretch
+        for(int i = 1; i < levels/4; i++)
+        {
+            double temp = lookup[1][i];
+            lookup[1][i] = lookup[1][(int)levels/2-i];
+            lookup[1][(int)levels/2-i] = temp;
+        }
+        
+        //Mirror
+        for(int i = 1; i < levels/2; i++)
+        {
+            lookup[1][(int)levels-i] = -lookup[1][i-1];
+        }
+        lookup[1][(int)levels/2] = -lookup[1][(int)levels/2-1];
+        
+        //Populate the rest of the lookup table
+        for(int i = 1; i < levels; i++)
+        {
+            if(i > 1)
+                lookup[0][i] = (lookup[1][i-1] + lookup[1][i])/2;
+            else
+                lookup[0][i] = (min + lookup[1][i])/2;
+        }
+        
+        //Quantize using lookup table
+        for(int k = 0; k < 20; k++)
+        {
+            for(int j = 0; j < data[k].length; j++)
+            {
+                for(int i = 0; i < levels-1; i++)
+                {
+                    if(data[k][j] >= lookup[0][i+1]){}
+                    else
+                    {
+                        data[k][j] = lookup[1][i];
+                        break;
+                    }
+                }
+            }
+        }
+        WriteData(data, output);
     }
     // </editor-fold>
     
@@ -483,6 +626,15 @@ public class Main
         
         return 0;
     }
+    
+    //Helper methods for numerical approximation for normal cdf with mean 0 and std dev = 0.33
+    
+    public static double cdf(double x)
+    {
+        double temp = x / 0.33;
+        return Math.pow(1+Math.exp(0.0054-1.6101*temp-0.0674*Math.pow(temp, 3)),-1);
+    }
+
     
     // </editor-fold>
 }

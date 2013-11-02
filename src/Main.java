@@ -33,7 +33,8 @@ public class Main
         
         
         //Input files
-        fx = "Data/sampledata/X/1.csv";
+		fx = "1.csv";
+        //fx = "Data/sampledata/X/1.csv";
         fy = "Data/sampledata/Y/1.csv";
         fz = "Data/sampledata/Z/1.csv";
         fw = "Data/sampledata/W/1.csv";
@@ -392,13 +393,13 @@ public class Main
                 return EO1(series,r,output);
                 
             case 2:
-//                return E02(series,output);
+//                return E02(series,r,output);
                 
             case 3:
 //                return E03(series,output);
                 
             case 4:
-                break;
+				return EO4(series,r,output);
                 
             default:
                 break;
@@ -518,8 +519,7 @@ public class Main
         int symbolCount = 0;
         int symbolsRead = 0;
         int buffer;
-        int bitMask = 1;
-        bitMask <<= 31; // move one all the way over to the MSB
+        int bitMask = 1 << 31;  //msb bitmask
         int columnCount = 0;    
         int bitCounter = 0;
      
@@ -585,12 +585,12 @@ public class Main
         
         return 0;
     }
-    public static HashMap<String,String> E02(String series, String output)
+    public static HashMap<String,String> EO2(String series, int r, String output)
     {
         double data[][] = ReadData(series);
         HashMap<String,String> symbolTable = new HashMap();
         int symbolCounter = 0;
-        int r = 0;
+        //int r = 0;
         
         try 
         {
@@ -612,9 +612,8 @@ public class Main
                             binStr = "0".concat(binStr);
                         }
                         symbolTable.put(sKey,binStr);
+						symbolCounter++; // keeping track of how many symbols are written
                     }
-                    symbolCounter++; // keeping track of how many symbols are written
-                    // should be 30*20
                 }
             }
             
@@ -624,6 +623,87 @@ public class Main
         
         
         return symbolTable;
+    }
+
+	/*public static HashMap<String,String> EO3(String series, int r, String output)
+	{
+		
+	}*/
+    
+    public static HashMap<String,String> EO4(String series, int r, String output)
+    {
+        double data[][] = ReadData(series);
+		HashMap<String,String> symbolTable = new HashMap();
+		int symbolCounter = (data[0].length*data.length); // rows * columns
+		int codeCounter = 0;
+		try
+		{
+			// Fill up table with primary symbols first
+			DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
+			for (int j = 0; j < 20; j++)
+			{
+				for (int i = 0; i < data[j].length; i++)
+				{
+					String sKey = String.valueOf(data[j][i]);
+                    String s = symbolTable.get(sKey);
+                    if (s == null)
+                    {
+                        String codeStr = Integer.toString(codeCounter);
+						while (codeStr.length() < r)
+						{
+							codeStr = "0".concat(codeStr);
+						}
+                        symbolTable.put(sKey,codeStr);
+						codeCounter++;
+                    }					
+				}				
+			}
+			
+			// LZW compression
+			int valueCounter = 0;
+			Boolean first = true;
+			String s = "";
+			String c = "";
+			for (int j = 0; j < 20; j++)
+			{				
+				for (int i = 0; i < data[j].length;i++)
+				{
+					if (first)
+					{
+						s = String.valueOf(data[j][0]);
+						c = String.valueOf(data[j][1]);
+						i++;
+						first = false;
+					}
+					else
+					{
+						c = String.valueOf(data[j][i]);
+					}
+
+					if ((symbolTable.get(s.concat(c))) != null)
+					{
+						s = s.concat(c);
+					}
+					else
+					{
+						out.writeInt(Integer.parseInt(symbolTable.get(s)));
+						String codeStr = Integer.toString(codeCounter);
+						symbolTable.put(s.concat(c),Integer.toString(codeCounter));
+						s = c;
+						codeCounter++;
+					}
+				}
+				out.writeInt(Integer.parseInt(symbolTable.get(s)));
+			}		
+		
+		}catch(FileNotFoundException e){
+            System.out.println("I/O file open failure");
+        }catch(IOException e){
+            System.out.println("I/O binary write failure");
+        }
+		
+		
+		return symbolTable;
     }
     //Everything below this line is a supporting function (e.g. read/write arrays from/to files)
     //------------------------------------------------------------------------------------------

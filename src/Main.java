@@ -522,10 +522,7 @@ public class Main
         bitMask <<= 31; // move one all the way over to the MSB
         int columnCount = 0;    
         int bitCounter = 0;
-        int buffersRead = 0;
-        System.out.println("Bitmask value: " + bitMask);
-        
-
+     
         try 
         {
             DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
@@ -534,8 +531,6 @@ public class Main
             double[][] data = new double[20][columnCount];
             Integer curInt;
             buffer = dis.readInt();
-            System.out.println("Buffer is: " + buffer);
-            System.out.println("First buffer value: " + symbolCount);
             for (int j = 0; j < 20; j++)
             {
                 for (int i = 0; i < columnCount; i++)
@@ -546,9 +541,7 @@ public class Main
                         if (bitCounter == 32)
                         {
                             buffer = dis.readInt();
-                            System.out.println("Buffer is " + buffer);
                             bitCounter = 0;
-                            buffersRead++;
                         }
                         
                         if ((buffer & bitMask) == bitMask) // bit is set
@@ -562,7 +555,7 @@ public class Main
                         buffer <<= 1;
                         bitCounter++;
                     }
-                    System.out.println("Symbol: " + symbol);
+
                     // Look up symbol in map and get key.
                     // If found, write to array.
                     for (String key : symbolTable.keySet())
@@ -576,9 +569,7 @@ public class Main
                     }               
                 }
             }
-            System.out.println("Symbols read: " + symbolsRead);
-            
- 
+            System.out.println("Symbols read: " + symbolsRead);           
             WriteData(data,"decode.csv");
         }
         catch(EOFException e){
@@ -591,7 +582,6 @@ public class Main
         catch(IOException e){
             System.out.println("I/O binary read failure");
         }
-        
         
         return 0;
     }

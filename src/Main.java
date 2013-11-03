@@ -16,6 +16,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.EOFException;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class Main 
 {
@@ -72,9 +73,10 @@ public class Main
         //double r = DO1(result, 16);
         //HashMap<String,String> result = EO4(in,3,"output.csv");
 		//double r = DO4(result,16);
-		HashMap<String,String> result = EO2(in,3,"output.csv");
-		double r = DO2(result,3);
-       
+		//HashMap<String,String> result = EO2(in,3,"output.csv");
+		//double r = DO2(result,3);
+       	HashMap<String,String> result = EO3(in,3,"output.csv");
+		
     }
     
     //Given a multivariate time series (in csv form with each line as a different sensor), returns an array
@@ -626,7 +628,7 @@ public class Main
                             bitCounter++;
                         }
 
-							//now write frequency
+			//now write frequency
                         String freq = Integer.toBinaryString(runCounter);
                         while (freq.length() < 32) {
                             freq = "0".concat(freq);
@@ -798,7 +800,8 @@ public class Main
         HashMap<String, Integer> freqTable = new HashMap();
         HashMap<String, String> symbolTable = new HashMap();
         int columnCount = data[0].length;
-        PriorityQueue<Node> q = new PriorityQueue<Node>();
+        PriorityQueue<Node> q = new PriorityQueue<Node>(10,nodeComparator);
+		
 
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
@@ -819,8 +822,22 @@ public class Main
                 newNode.symbol = key;
                 newNode.value = freqTable.get(key);
                 q.add(newNode);
-
             }
+            
+            Node root = buildTree(q);
+
+			// fill up symbol table
+
+			symbolTable.put(root.left.symbol,"0");
+			symbolTable.put(root.right.symbol,"1");
+			root = root.right;
+			while (root.right != null)
+			{
+				symbolTable.put(root.left.symbol,symbolTable.get(root.symbol).concat("0"));
+				symbolTable.put(root.right.symbol,symbolTable.get(root.symbol).concat("1"));
+				root = root.right;
+			}
+			
 
         } catch (FileNotFoundException f) {
             System.out.println("Error");
@@ -1138,18 +1155,30 @@ public class Main
         if (q.size() < 2) {
             return null;
         } else {
-            while (q.size() > 0) {
+            while (q.size() > 1) {
                 a = q.poll();
                 b = q.poll();
                 parent = new Node();
-                parent.value = a.value + b.value;
-                parent.symbol = Integer.toBinaryString(parentSymbol);
-                parentSymbol++;
-                q.add(parent);
+               	parent.value = a.value + b.value;
+               	parent.symbol = Integer.toBinaryString(parentSymbol);
+				a.parent = parent;
+				b.parent = parent;
+				parent.left = a;
+				parent.right = b;
+               	parentSymbol++;
+               	q.add(parent);
             }
-            return parent;
+            return q.poll();
         }
     }
+
+	public static Comparator<Node> nodeComparator = new Comparator<Node>(){
+		@Override
+		public int compare(Node n1, Node n2){
+			return (int)(n1.value - n2.value);
+		}
+	};
+
 
     // </editor-fold>
 }

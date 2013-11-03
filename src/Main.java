@@ -847,15 +847,156 @@ public class Main
 
             }
 
+			//Now we have the symbols... write to file
+			int bitCounter = 0;
+			int buffer = 0;
+			out.writeInt(columnCount);
+			
+			for (int j = 0; j < 20; j++)
+			{
+				for (int i = 0; i < data[j].length; i++)
+				{
+					String symbol = symbolTable.get(String.valueOf(data[j][i]));
+					if (symbol != null)
+					{
+						char[] c = symbol.toCharArray();
+						for (int k = 0; k < c.length; k++)
+						{
+							if (bitCounter == 32)
+							{
+								out.writeInt(buffer);
+								buffer = 0;
+								bitCounter = 0;
+							}
+							buffer <<= 1;
+							if (c[k] == '0')
+								buffer |= 0;
+							else
+								buffer |= 1;
+							bitCounter++;
+
+						}
+					}
+					else{
+						System.out.println("Critical error symbol not found");
+					}
+				}
+			}
+			
+			if (bitCounter != 0) {
+                buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
+                out.writeInt(buffer);
+            }
+
         } catch (FileNotFoundException f) {
             System.out.println("Error");
         }
-        /*catch(IOException e){
+        catch(IOException e){
          System.out.println("I/O Binary write failure");
-         }*/
+         }
 
         return symbolTable;
     }
+
+	public static double DO3(HashMap<String,String> symbolTable, int r)
+	{
+		int buffer;
+		int bitMask = 1 << 31;
+		int columnCount = 0;
+		int bitCounter = 0;
+		double[][] data = null;
+
+		
+		try{
+			DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+			columnCount = dis.readInt();
+			data = new double[20][columnCount];
+			buffer = dis.readInt();
+
+				for (int j = 0; j < 20; j++)
+				{
+					for (int i = 0; i < data[j].length; i++)
+					{
+						if (bitCounter == 32)
+						{
+							buffer = dis.readInt();
+							bitCounter = 0;
+						}
+						
+						String finalSymbol = "";
+						String finalKey = "";
+						if ((buffer & bitMask) == bitMask)
+						{
+							finalSymbol.concat("1");
+							buffer <<= 1;
+							bitCounter++;
+						}
+						else
+						{
+							finalSymbol.concat("0");
+							buffer <<= 1;
+							bitCounter++;
+						}
+						
+						Boolean found = false;
+						for (String key : symbolTable.keySet())
+						{
+							if((symbolTable.get(key)).equals(finalSymbol))
+							{
+								found = true;
+								finalKey = key;
+								break;
+							}
+						}
+						
+						// If you don't find it, keep parsing bits and check against table.
+						while (!found)
+						{
+							if (bitCounter == 32)
+							{
+								buffer = dis.readInt();
+								bitCounter = 0;
+							}
+
+							if ((buffer & bitMask) == bitMask)
+							{
+								finalSymbol.concat("1");
+								buffer <<= 1;
+								bitCounter++;
+							}
+							else
+							{
+								finalSymbol.concat("0");
+								buffer <<= 1;
+								bitCounter++;
+							}
+							
+							for (String key : symbolTable.keySet())
+							{
+								if((symbolTable.get(key)).equals(finalSymbol))
+								{
+									found = true;
+									finalKey = key;
+									break;
+								}
+							}
+						}
+						data[i][j] = Double.parseDouble(finalKey);
+					}					
+				}
+				WriteData(data,"decode.csv");
+			
+		
+		} catch (EOFException e) {
+            System.out.println("End of file.");
+        } catch (FileNotFoundException e) {
+            System.out.println("I/O file open failure");
+        } catch (IOException e) {
+            System.out.println("I/O binary read failure");
+        }
+		return 0;
+		
+	}
 
     public static HashMap<String, String> EO4(String series, int r, String output) {
         double data[][] = ReadData(series);

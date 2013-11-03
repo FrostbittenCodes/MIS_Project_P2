@@ -823,6 +823,14 @@ public class Main
                 newNode.value = freqTable.get(key);
                 q.add(newNode);
             }
+
+
+//			PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
+/*			DEBUG PRINTING:
+			while (!temp.isEmpty()){
+				Node cur = temp.remove();
+				System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
+			}*/
             
             Node root = buildTree(q);
 
@@ -836,6 +844,11 @@ public class Main
 				symbolTable.put(root.left.symbol,symbolTable.get(root.symbol).concat("0"));
 				symbolTable.put(root.right.symbol,symbolTable.get(root.symbol).concat("1"));
 				root = root.right;
+			}
+			
+			for (String key : symbolTable.keySet()){
+				System.out.println("Key: " + key + " Value: " + symbolTable.get(key));
+				
 			}
 			
 

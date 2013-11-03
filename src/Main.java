@@ -68,15 +68,15 @@ public class Main
         */
         
         //Quantizer
-        UniformQuantize(fx, "quant.csv", 5);
+        UniformQuantize(fx, "quant.csv", 4);
         // HashMap<String,String> result = EO1(fx,16,"output.csv");
         //double r = DO1(result, 16);
         //HashMap<String,String> result = EO4(in,3,"output.csv");
 		//double r = DO4(result,16);
 		//HashMap<String,String> result = EO2(in,3,"output.csv");
 		//double r = DO2(result,3);
-       	Node tree = EO3(in,5,"output.csv");
-		double r = DO3(tree,5);
+       	Node tree = EO3(in,4,"output.csv");
+		double r = DO3(tree,4);
 		
     }
     
@@ -801,8 +801,8 @@ public class Main
         HashMap<String, Integer> freqTable = new HashMap();
         HashMap<String, String> symbolTable = new HashMap();
         int columnCount = data[0].length;
-        PriorityQueue<Node> q = new PriorityQueue<Node>(10,nodeComparator);
-		Node tree = null;
+        PriorityQueue<Node> q = new PriorityQueue<Node>(10, nodeComparator);
+        Node tree = null;
 
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
@@ -825,17 +825,16 @@ public class Main
                 q.add(newNode);
             }
 
-			PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
-		//	DEBUG PRINTING:
-             while (!temp.isEmpty()){
-             Node cur = temp.remove();
-             System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
-             }
+            PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
+            //	DEBUG PRINTING:
+            while (!temp.isEmpty()) {
+                Node cur = temp.remove();
+                System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
+            }
             Node root = buildTree(q);
 
-
-            PreOrder(root,"");
-            FillTable(root,symbolTable);
+            PreOrder(root, "");
+            FillTable(root, symbolTable);
 
             tree = root;
 
@@ -844,133 +843,123 @@ public class Main
 
             }
 
-			//Now we have the symbols... write to file
-			int bitCounter = 0;
-			int buffer = 0;
-			out.writeInt(columnCount);
-			int buffersWritten = 0;
+            //Now we have the symbols... write to file
+            int bitCounter = 0;
+            int buffer = 0;
+            out.writeInt(columnCount);
+            int buffersWritten = 0;
             Boolean first = true;
-			for (int j = 0; j < 20; j++)
-			{
-				for (int i = 0; i < data[j].length; i++)
-				{
-					String symbol = symbolTable.get(String.valueOf(data[j][i]));
-					if (symbol != null)
-					{
-						char[] c = symbol.toCharArray();
+            for (int j = 0; j < 20; j++) {
+                for (int i = 0; i < data[j].length; i++) {
+                    String symbol = symbolTable.get(String.valueOf(data[j][i]));
+                    if (symbol != null) {
+                        char[] c = symbol.toCharArray();
 //                        System.out.println("Writing " + symbol + " to file");
-						for (int k = 0; k < c.length; k++)
-						{
-							if (bitCounter == 32)
-							{
-								out.writeInt(buffer);
-								buffer = 0;
-								bitCounter = 0;
+                        for (int k = 0; k < c.length; k++) {
+                            if (bitCounter == 32) {
+                                out.writeInt(buffer);
+                                buffer = 0;
+                                bitCounter = 0;
                                 buffersWritten++;
-							}
-							buffer <<= 1;
-							if (c[k] == '0')
-								buffer |= 0;
-							else
-								buffer |= 1;
-							bitCounter++;
+                            }
+                            buffer <<= 1;
+                            if (c[k] == '0') {
+                                buffer |= 0;
+                            } else {
+                                buffer |= 1;
+                            }
+                            bitCounter++;
 //                            System.out.println("buffer: " + buffer);
 
-						}
-					}
-					else{
-						
-						System.out.println("Critical error symbol not found for " + data[j][i]);
-					}
-				}
-			}
-			
-			if (bitCounter != 0) {
+                        }
+                    } else {
+
+                        System.out.println("Critical error symbol not found for " + data[j][i]);
+                    }
+                }
+            }
+
+            if (bitCounter != 0) {
                 buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
                 out.writeInt(buffer);
                 buffersWritten++;
             }
             System.out.println("Buffers written: " + buffersWritten);
 
-
         } catch (FileNotFoundException f) {
             System.out.println("Error");
+        } catch (IOException e) {
+            System.out.println("I/O Binary write failure");
         }
-        catch(IOException e){
-         System.out.println("I/O Binary write failure");
-         }
 
         return tree;
     }
 
-	public static double DO3(Node head, int r)
-	{
-		int buffer;
-		int bitMask = 1 << 31;
-		int columnCount = 0;
-		int bitCounter = 0;
-		double[][] data = null;
+    public static double DO3(Node head, int r) {
+        int buffer;
+        int bitMask = 1 << 31;
+        int columnCount = 0;
+        int bitCounter = 0;
+        double[][] data = null;
         int printCounter = 0;
-		
-		try{
-			DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
-			columnCount = dis.readInt();
-			data = new double[20][columnCount];
-			System.out.println("Column count: " + columnCount);
-			buffer = dis.readInt();
+        Boolean first = true;
 
-				for (int j = 0; j < 20; j++)
-				{
-					for (int i = 0; i < data[j].length; i++)
-					{
-                        Node root = head;
-                        Node prev = null;
-                        while (root != null)
-                        {
-                            //System.out.println("Visiting " + root.code);
-                            String finalSymbol = "";
-                            String finalKey = "";
-                            if (bitCounter == 32)
-                            {
-                                buffer = dis.readInt();
-                                bitCounter = 0;
-                            }
+        try {
+            DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            columnCount = dis.readInt();
+            data = new double[20][columnCount];
+            System.out.println("Column count: " + columnCount);
+            buffer = dis.readInt();
 
-                            if ((buffer & bitMask) == bitMask)
-                            {
-                                prev = root;
-                                root = root.right;
-                                buffer <<= 1;
-                                bitCounter++;
+            for (int j = 0; j < 20; j++) {
+                for (int i = 0; i < data[j].length; i++) {
+                    Node root = head;
+                    Node prev = null;
+                    while (root.right != null || root.left != null) {
+                        //System.out.println("Visiting " + root.code);
+                        String finalSymbol = "";
+                        String finalKey = "";
+                        if (bitCounter == 32) {
+                            buffer = dis.readInt();
+                            bitCounter = 0;
+                        }
+
+                        if ((buffer & bitMask) == bitMask) {
+                            prev = root;
+                            root = root.right;
+                            buffer <<= 1;
+                            bitCounter++;
+                            if (first) {
+                                System.out.println("Moving right, saw a 1");
                             }
-                            else
-                            {
-                                prev = root;
-                                root = root.left;
-                                buffer <<= 1;
-                                bitCounter++;
+                        } else {
+                            prev = root;
+                            root = root.left;
+                            buffer <<= 1;
+                            bitCounter++;
+                            if (first) {
+                                System.out.println("Moving left, saw a 0");
                             }
                         }
-                        data[j][i] = Double.parseDouble(prev.symbol);
-                       // System.out.println("Data is: " + data[j][i]);
-					}					
-				}
-            
-				
-			
-		
-		} catch (EOFException e) {
+                    }
+                    first = false;
+                    data[j][i] = Double.parseDouble(root.symbol);
+                    // System.out.println("Data is: " + data[j][i]);
+                }
+            }
+
+        } catch (EOFException e) {
             System.out.println("End of file.");
         } catch (FileNotFoundException e) {
             System.out.println("I/O file open failure");
         } catch (IOException e) {
             System.out.println("I/O binary read failure");
         }
-        WriteData(data,"decode.csv");
-		
-		return 0;
-		
-	}
+        WriteData(data, "decode.csv");
+
+        return 0;
+
+    }
 
     public static HashMap<String, String> EO4(String series, int r, String output) {
         double data[][] = ReadData(series);
@@ -1281,40 +1270,41 @@ public class Main
             while (q.size() > 1) {
                 a = q.poll();
                 b = q.poll();
-				System.out.println("A symbol: " + a.symbol);
-				System.out.println("B symbol: " + b.symbol);
+                System.out.println("A symbol: " + a.symbol);
+                System.out.println("B symbol: " + b.symbol);
                 parent = new Node();
                 parent.value = a.value + b.value;
-				parent.symbol = "P".concat(Integer.toString(parentSymbol));
+                parent.symbol = "P".concat(Integer.toString(parentSymbol));
                 a.parent = parent;
                 b.parent = parent;
-				parent.right = b;
-				parent.left = a;
+                parent.right = b;
+                parent.left = a;
                 parentSymbol++;
                 q.add(parent);
-            }          
+            }
             return q.poll();
         }
     }
 
-    public static void PreOrder(Node n, String id)
-    {
-        if (n == null)
+    public static void PreOrder(Node n, String id) {
+        if (n == null) {
             return;
+        }
         System.out.println("Visiting node: " + n.symbol);
         n.code = id;
-        PreOrder(n.left,id.concat("0"));
-        PreOrder(n.right,id.concat("1"));
+        PreOrder(n.left, id.concat("0"));
+        PreOrder(n.right, id.concat("1"));
     }
 
-    public static void FillTable(Node n, HashMap<String,String> symbolTable)
-    {
-        if (n == null)
+    public static void FillTable(Node n, HashMap<String, String> symbolTable) {
+        if (n == null) {
             return;
-        if (n.code != null)
-            symbolTable.put(n.symbol,n.code);
-        FillTable(n.left,symbolTable);
-        FillTable(n.right,symbolTable);
+        }
+        if (n.code != null) {
+            symbolTable.put(n.symbol, n.code);
+        }
+        FillTable(n.left, symbolTable);
+        FillTable(n.right, symbolTable);
     }
 
     public static Comparator<Node> nodeComparator = new Comparator<Node>() {

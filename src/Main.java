@@ -68,14 +68,15 @@ public class Main
         */
         
         //Quantizer
-        UniformQuantize(fx, "quant.csv", 3);
+        UniformQuantize(fx, "quant.csv", 4);
         // HashMap<String,String> result = EO1(fx,16,"output.csv");
         //double r = DO1(result, 16);
         //HashMap<String,String> result = EO4(in,3,"output.csv");
 		//double r = DO4(result,16);
 		//HashMap<String,String> result = EO2(in,3,"output.csv");
 		//double r = DO2(result,3);
-       	HashMap<String,String> result = EO3(in,3,"output.csv");
+       	HashMap<String,String> result = EO3(in,4,"output.csv");
+		double r = DO3(result,4);
 		
     }
     
@@ -824,19 +825,24 @@ public class Main
                 q.add(newNode);
             }
 
-//			PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
-/*			DEBUG PRINTING:
+			PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
+		//	DEBUG PRINTING:
              while (!temp.isEmpty()){
              Node cur = temp.remove();
              System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
-             }*/
+             }
             Node root = buildTree(q);
 
 			// fill up symbol table
             symbolTable.put(root.left.symbol, "0");
             symbolTable.put(root.right.symbol, "1");
+			System.out.println("Root right: " + root.right.symbol);
+			System.out.println("Root left: " + root.left.symbol);
+
             root = root.right;
             while (root.right != null) {
+				System.out.println("Root right: " + root.right.symbol);
+				System.out.println("Root left: " + root.left.symbol);
                 symbolTable.put(root.left.symbol, symbolTable.get(root.symbol).concat("0"));
                 symbolTable.put(root.right.symbol, symbolTable.get(root.symbol).concat("1"));
                 root = root.right;
@@ -911,6 +917,7 @@ public class Main
 			DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
 			columnCount = dis.readInt();
 			data = new double[20][columnCount];
+			System.out.println("Column count: " + columnCount);
 			buffer = dis.readInt();
 
 				for (int j = 0; j < 20; j++)
@@ -927,13 +934,13 @@ public class Main
 						String finalKey = "";
 						if ((buffer & bitMask) == bitMask)
 						{
-							finalSymbol.concat("1");
+							finalSymbol = finalSymbol.concat("1");
 							buffer <<= 1;
 							bitCounter++;
 						}
 						else
 						{
-							finalSymbol.concat("0");
+							finalSymbol = finalSymbol.concat("0");
 							buffer <<= 1;
 							bitCounter++;
 						}
@@ -943,9 +950,12 @@ public class Main
 						{
 							if((symbolTable.get(key)).equals(finalSymbol))
 							{
-								found = true;
-								finalKey = key;
-								break;
+								if(key.charAt(0) != 'P')
+								{
+									found = true;
+									finalKey = key;
+									break;
+								}
 							}
 						}
 						
@@ -960,13 +970,13 @@ public class Main
 
 							if ((buffer & bitMask) == bitMask)
 							{
-								finalSymbol.concat("1");
+								finalSymbol = finalSymbol.concat("1");
 								buffer <<= 1;
 								bitCounter++;
 							}
 							else
 							{
-								finalSymbol.concat("0");
+								finalSymbol = finalSymbol.concat("0");
 								buffer <<= 1;
 								bitCounter++;
 							}
@@ -975,16 +985,20 @@ public class Main
 							{
 								if((symbolTable.get(key)).equals(finalSymbol))
 								{
-									found = true;
-									finalKey = key;
-									break;
+									if(key.charAt(0) != 'P')
+									{
+										found = true;
+										finalKey = key;
+										break;
+									}
 								}
 							}
 						}
-						data[i][j] = Double.parseDouble(finalKey);
+						data[j][i] = Double.parseDouble(finalKey);
+						//System.out.println("Wrote " + data[j][i] + " to file.");
 					}					
 				}
-				WriteData(data,"decode.csv");
+				
 			
 		
 		} catch (EOFException e) {
@@ -994,6 +1008,7 @@ public class Main
         } catch (IOException e) {
             System.out.println("I/O binary read failure");
         }
+		WriteData(data,"decode.csv");
 		return 0;
 		
 	}
@@ -1309,11 +1324,19 @@ public class Main
                 b = q.poll();
                 parent = new Node();
                 parent.value = a.value + b.value;
-                parent.symbol = Integer.toBinaryString(parentSymbol);
+                parent.symbol = "P".concat(Integer.toString(parentSymbol));
                 a.parent = parent;
                 b.parent = parent;
-                parent.left = b;
-                parent.right = a;
+				if (a.symbol.charAt(0) == 'P')
+				{
+					parent.right = a;
+					parent.left = b;
+				}
+				else
+				{
+					parent.right = b;
+					parent.left = a;
+				}
                 parentSymbol++;
                 q.add(parent);
             }          

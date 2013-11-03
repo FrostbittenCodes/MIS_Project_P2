@@ -824,33 +824,28 @@ public class Main
                 q.add(newNode);
             }
 
-
 //			PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
 /*			DEBUG PRINTING:
-			while (!temp.isEmpty()){
-				Node cur = temp.remove();
-				System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
-			}*/
-            
+             while (!temp.isEmpty()){
+             Node cur = temp.remove();
+             System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
+             }*/
             Node root = buildTree(q);
 
 			// fill up symbol table
+            symbolTable.put(root.left.symbol, "0");
+            symbolTable.put(root.right.symbol, "1");
+            root = root.right;
+            while (root.right != null) {
+                symbolTable.put(root.left.symbol, symbolTable.get(root.symbol).concat("0"));
+                symbolTable.put(root.right.symbol, symbolTable.get(root.symbol).concat("1"));
+                root = root.right;
+            }
 
-			symbolTable.put(root.left.symbol,"0");
-			symbolTable.put(root.right.symbol,"1");
-			root = root.right;
-			while (root.right != null)
-			{
-				symbolTable.put(root.left.symbol,symbolTable.get(root.symbol).concat("0"));
-				symbolTable.put(root.right.symbol,symbolTable.get(root.symbol).concat("1"));
-				root = root.right;
-			}
-			
-			for (String key : symbolTable.keySet()){
-				System.out.println("Key: " + key + " Value: " + symbolTable.get(key));
-				
-			}
-			
+            for (String key : symbolTable.keySet()) {
+                System.out.println("Key: " + key + " Value: " + symbolTable.get(key));
+
+            }
 
         } catch (FileNotFoundException f) {
             System.out.println("Error");
@@ -1168,35 +1163,29 @@ public class Main
         if (q.size() < 2) {
             return null;
         } else {
-			System.out.println("Building tree...");
             while (q.size() > 1) {
                 a = q.poll();
                 b = q.poll();
-				System.out.println("value of a: " + a.value + " value of b: " + b.value);
-				System.out.println("Symbol of a: " + a.symbol + " symbol of b: " + b.symbol);
                 parent = new Node();
-               	parent.value = a.value + b.value;
-               	parent.symbol = Integer.toBinaryString(parentSymbol);
-				a.parent = parent;
-				b.parent = parent;
-				parent.left = b;
-				parent.right = a;
-               	parentSymbol++;
-               	q.add(parent);
-				System.out.println("Adding new parent node with value " + parent.value + " to Queue...");
-            }
-			System.out.println("Node we will return has symbol " + q.peek().symbol + " and value " + q.peek().value);
-			System.out.println(q.peek().left.symbol);
+                parent.value = a.value + b.value;
+                parent.symbol = Integer.toBinaryString(parentSymbol);
+                a.parent = parent;
+                b.parent = parent;
+                parent.left = b;
+                parent.right = a;
+                parentSymbol++;
+                q.add(parent);
+            }          
             return q.poll();
         }
     }
 
-	public static Comparator<Node> nodeComparator = new Comparator<Node>(){
-		@Override
-		public int compare(Node n1, Node n2){
-			return (int)(n1.value - n2.value);
-		}
-	};
+    public static Comparator<Node> nodeComparator = new Comparator<Node>() {
+        @Override
+        public int compare(Node n1, Node n2) {
+            return (int) (n1.value - n2.value);
+        }
+    };
 
 
     // </editor-fold>

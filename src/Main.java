@@ -202,14 +202,14 @@ public class Main
                         fyn = output_root + "ydecode.csv";
                         fzn = output_root + "zdecode.csv";
                         fwn = output_root + "wdecode.csv";
-        		symbolTable = EO1(fx,bits, output_root + "fxout");
-        		DO1(symbolTable,bits, output_root + "fxout", fxn);
-        		symbolTable = EO1(fy,bits, output_root + "fyout");
-        		DO1(symbolTable,bits, output_root + "fyout", fyn);
-        		symbolTable = EO1(fz,bits, output_root + "fzout");
-        		DO1(symbolTable,bits, output_root + "fzout", fzn);
-        		symbolTable = EO1(fw,bits, output_root + "fwout");
-        		DO1(symbolTable,bits, output_root + "fwout", fwn);
+        		symbolTable = EO1(fx,bits, output_root + "xout");
+        		DO1(symbolTable,bits, output_root + "xout", fxn);
+        		symbolTable = EO1(fy,bits, output_root + "yout");
+        		DO1(symbolTable,bits, output_root + "yout", fyn);
+        		symbolTable = EO1(fz,bits, output_root + "zout");
+        		DO1(symbolTable,bits, output_root + "zout", fzn);
+        		symbolTable = EO1(fw,bits, output_root + "wout");
+        		DO1(symbolTable,bits, output_root + "wout", fwn);
 
         		break;
 
@@ -218,14 +218,14 @@ public class Main
                         fyn = output_root + "ydecode.csv";
                         fzn = output_root + "zdecode.csv";
                         fwn = output_root + "wdecode.csv";
-        		symbolTable = EO2(fx,bits, output_root + "fxout");
-        		DO2(symbolTable,bits, output_root + "fxout", fxn);
-        		symbolTable = EO2(fy,bits, output_root + "fyout");
-        		DO2(symbolTable,bits, output_root + "fyout", fyn);
-        		symbolTable = EO2(fz,bits, output_root + "fzout");
-        		DO2(symbolTable,bits, output_root + "fzout", fzn);
-        		symbolTable = EO2(fw,bits, output_root + "fwout");
-        		DO2(symbolTable,bits, output_root + "fwout", fwn);
+        		symbolTable = EO2(fx,bits, output_root + "xout");
+        		DO2(symbolTable,bits, output_root + "xout", fxn);
+        		symbolTable = EO2(fy,bits, output_root + "yout");
+        		DO2(symbolTable,bits, output_root + "yout", fyn);
+        		symbolTable = EO2(fz,bits, output_root + "zout");
+        		DO2(symbolTable,bits, output_root + "zout", fzn);
+        		symbolTable = EO2(fw,bits, output_root + "wout");
+        		DO2(symbolTable,bits, output_root + "wout", fwn);
 
         		break;
 
@@ -234,14 +234,14 @@ public class Main
                         fyn = output_root + "ydecode.csv";
                         fzn = output_root + "zdecode.csv";
                         fwn = output_root + "wdecode.csv";
-        		tree = EO3(fx,bits, output_root + "fxout");
-        		DO3(tree,bits, output_root + "fxout", fxn);
-        		tree = EO3(fy,bits, output_root + "fyout");
-        		DO3(tree,bits, output_root + "fyout", fyn);
-        		tree = EO3(fz,bits, output_root + "fzout");
-        		DO3(tree,bits, output_root + "fzout", fzn);
-        		tree = EO3(fw,bits, output_root + "fwout");
-        		DO3(tree,bits, output_root + "fwout", fwn);
+        		tree = EO3(fx,bits, output_root + "xout");
+        		DO3(tree,bits, output_root + "xout", fxn);
+        		tree = EO3(fy,bits, output_root + "yout");
+        		DO3(tree,bits, output_root + "yout", fyn);
+        		tree = EO3(fz,bits, output_root + "zout");
+        		DO3(tree,bits, output_root + "zout", fzn);
+        		tree = EO3(fw,bits, output_root + "wout");
+        		DO3(tree,bits, output_root + "wout", fwn);
 
         		break;
 
@@ -250,14 +250,14 @@ public class Main
                         fyn = output_root + "ydecode.csv";
                         fzn = output_root + "zdecode.csv";
                         fwn = output_root + "wdecode.csv";
-        		symbolTable = EO4(fx,bits, output_root + "fxout");
-        		DO4(symbolTable,bits, output_root + "fxout", fxn);
-        		symbolTable = EO4(fy,bits, output_root + "fyout");
-        		DO4(symbolTable,bits, output_root + "fyout", fyn);
-        		symbolTable = EO4(fz,bits, output_root + "fzout");
-        		DO4(symbolTable,bits, output_root + "fzout", fzn);
-        		symbolTable = EO4(fw,bits, output_root + "fwout");
-        		DO4(symbolTable,bits, output_root + "fwout", fwn);
+        		symbolTable = EO4(fx,bits, output_root + "xout");
+        		DO4(symbolTable,bits, output_root + "xout", fxn);
+        		symbolTable = EO4(fy,bits, output_root + "yout");
+        		DO4(symbolTable,bits, output_root + "yout", fyn);
+        		symbolTable = EO4(fz,bits, output_root + "zout");
+        		DO4(symbolTable,bits, output_root + "zout", fzn);
+        		symbolTable = EO4(fw,bits, output_root + "wout");
+        		DO4(symbolTable,bits, output_root + "wout", fwn);
 
         		break;
 

@@ -198,10 +198,10 @@ public class Main
         switch(encode_scheme)
         {
         	case 1:
-                        fxn = output_root + "fxdecode.csv";
-                        fyn = output_root + "fydecode.csv";
-                        fzn = output_root + "fzdecode.csv";
-                        fwn = output_root + "fwdecode.csv";
+                        fxn = output_root + "xdecode.csv";
+                        fyn = output_root + "ydecode.csv";
+                        fzn = output_root + "zdecode.csv";
+                        fwn = output_root + "wdecode.csv";
         		symbolTable = EO1(fx,bits, output_root + "fxout");
         		DO1(symbolTable,bits, output_root + "fxout", fxn);
         		symbolTable = EO1(fy,bits, output_root + "fyout");
@@ -214,10 +214,10 @@ public class Main
         		break;
 
         	case 2:
-                        fxn = output_root + "fxdecode.csv";
-                        fyn = output_root + "fydecode.csv";
-                        fzn = output_root + "fzdecode.csv";
-                        fwn = output_root + "fwdecode.csv";
+                        fxn = output_root + "xdecode.csv";
+                        fyn = output_root + "ydecode.csv";
+                        fzn = output_root + "zdecode.csv";
+                        fwn = output_root + "wdecode.csv";
         		symbolTable = EO2(fx,bits, output_root + "fxout");
         		DO2(symbolTable,bits, output_root + "fxout", fxn);
         		symbolTable = EO2(fy,bits, output_root + "fyout");
@@ -230,10 +230,10 @@ public class Main
         		break;
 
         	case 3:
-                        fxn = output_root + "fxdecode.csv";
-                        fyn = output_root + "fydecode.csv";
-                        fzn = output_root + "fzdecode.csv";
-                        fwn = output_root + "fwdecode.csv";
+                        fxn = output_root + "xdecode.csv";
+                        fyn = output_root + "ydecode.csv";
+                        fzn = output_root + "zdecode.csv";
+                        fwn = output_root + "wdecode.csv";
         		tree = EO3(fx,bits, output_root + "fxout");
         		DO3(tree,bits, output_root + "fxout", fxn);
         		tree = EO3(fy,bits, output_root + "fyout");
@@ -246,10 +246,10 @@ public class Main
         		break;
 
         	case 4:
-                        fxn = output_root + "fxdecode.csv";
-                        fyn = output_root + "fydecode.csv";
-                        fzn = output_root + "fzdecode.csv";
-                        fwn = output_root + "fwdecode.csv";
+                        fxn = output_root + "xdecode.csv";
+                        fyn = output_root + "ydecode.csv";
+                        fzn = output_root + "zdecode.csv";
+                        fwn = output_root + "wdecode.csv";
         		symbolTable = EO4(fx,bits, output_root + "fxout");
         		DO4(symbolTable,bits, output_root + "fxout", fxn);
         		symbolTable = EO4(fy,bits, output_root + "fyout");

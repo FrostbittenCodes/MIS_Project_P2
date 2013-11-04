@@ -68,15 +68,15 @@ public class Main
         */
         
         //Quantizer
-        UniformQuantize(fx, "quant.csv", 3);
-        // HashMap<String,String> result = EO1(fx,16,"output.csv");
+        UniformQuantize(fx, "quant.csv", 16);
+        //HashMap<String,String> result = EO1(in,16,"output.csv");
         //double r = DO1(result, 16);
-        HashMap<String,String> result = EO4(in,16,"output.csv");
-		double r = DO4(result,16);
-		//HashMap<String,String> result = EO2(in,3,"output.csv");
-		//double r = DO2(result,3);
-       	//Node tree = EO3(in,4,"output.csv");
-		//double r = DO3(tree,4);
+        //HashMap<String,String> result = EO2(in,16,"output.csv");
+        //double r = DO2(result,16);
+        //Node tree = EO3(in,4,"output.csv");
+        //double r = DO3(tree,4);
+        HashMap<String, String> result = EO4(in, 16, "output.csv");
+        double r = DO4(result, 16);
 		
     }
     
@@ -485,7 +485,7 @@ public class Main
                             bitCounter++;
                         }
                     } else {
-//                        System.out.println("Critical error: symbol not found");
+                        System.out.println("Critical error: symbol not found");
                     }
                 }
             }
@@ -497,8 +497,6 @@ public class Main
                 buffersWritten++;
             }
 
-            System.out.println("Symbols written: " + symbolCounter);
-            System.out.println("Buffers written: " + buffersWritten);
         } catch (FileNotFoundException e) {
             System.out.println("I/O file open failure");
         } catch (IOException e) {
@@ -547,6 +545,7 @@ public class Main
                     // If found, write to array.
                     for (String key : symbolTable.keySet()) {
                         if ((symbolTable.get(key)).equals(symbol)) {
+                            System.out.println("Casting to double: " + key);
                             data[j][i] = Double.parseDouble(key);
                             symbolsRead++;
                             break;
@@ -554,7 +553,6 @@ public class Main
                     }
                 }
             }
-            System.out.println("Symbols read: " + symbolsRead);
             WriteData(data, "decode.csv");
         } catch (EOFException e) {
             System.out.println("End of file.");
@@ -597,6 +595,7 @@ public class Main
 
             symbolCounter = 0;
             out.writeInt(columnCount);
+
             // RLE
             int buffer = 0;
             int bitCounter = 0;
@@ -610,7 +609,6 @@ public class Main
                         previousKey = curKey;
                     } else {
                         symbolCounter += runCounter;
-                        System.out.println("Run of " + runCounter + " symbols");
                         String symbol = symbolTable.get(previousKey);
 
                         char[] c = symbol.toCharArray();
@@ -629,7 +627,7 @@ public class Main
                             bitCounter++;
                         }
 
-			//now write frequency
+			             //now write frequency
                         String freq = Integer.toBinaryString(runCounter);
                         while (freq.length() < 32) {
                             freq = "0".concat(freq);
@@ -659,7 +657,6 @@ public class Main
 
             if (runCounter != 0) {
                 symbolCounter += runCounter;
-                System.out.println("Last run is " + runCounter + " symbols");
                 String symbol = symbolTable.get(previousKey);
 
                 char[] c = symbol.toCharArray();
@@ -771,8 +768,6 @@ public class Main
                         for (int x = 0; x < finalFreq; x++) {
                             resultList.add(key);
                         }
-//                        data[j][i] = Double.parseDouble(key);
-//                        symbolsRead++; 
                         break;
                     }
                 }
@@ -825,23 +820,12 @@ public class Main
                 q.add(newNode);
             }
 
-            PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
-            //	DEBUG PRINTING:
-            while (!temp.isEmpty()) {
-                Node cur = temp.remove();
-                System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
-            }
             Node root = buildTree(q);
 
             PreOrder(root, "");
             FillTable(root, symbolTable);
 
             tree = root;
-
-            for (String key : symbolTable.keySet()) {
-                System.out.println("Key: " + key + " Value: " + symbolTable.get(key));
-
-            }
 
             //Now we have the symbols... write to file
             int bitCounter = 0;
@@ -854,7 +838,6 @@ public class Main
                     String symbol = symbolTable.get(String.valueOf(data[j][i]));
                     if (symbol != null) {
                         char[] c = symbol.toCharArray();
-//                        System.out.println("Writing " + symbol + " to file");
                         for (int k = 0; k < c.length; k++) {
                             if (bitCounter == 32) {
                                 out.writeInt(buffer);
@@ -869,8 +852,6 @@ public class Main
                                 buffer |= 1;
                             }
                             bitCounter++;
-//                            System.out.println("buffer: " + buffer);
-
                         }
                     } else {
 
@@ -908,7 +889,6 @@ public class Main
             DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
             columnCount = dis.readInt();
             data = new double[20][columnCount];
-            System.out.println("Column count: " + columnCount);
             buffer = dis.readInt();
 
             for (int j = 0; j < 20; j++) {
@@ -916,7 +896,6 @@ public class Main
                     Node root = head;
                     Node prev = null;
                     while (root.right != null || root.left != null) {
-                        //System.out.println("Visiting " + root.code);
                         String finalSymbol = "";
                         String finalKey = "";
                         if (bitCounter == 32) {
@@ -929,17 +908,12 @@ public class Main
                             root = root.right;
                             buffer <<= 1;
                             bitCounter++;
-                            if (first) {
-                                System.out.println("Moving right, saw a 1");
-                            }
+
                         } else {
                             prev = root;
                             root = root.left;
                             buffer <<= 1;
                             bitCounter++;
-                            if (first) {
-                                System.out.println("Moving left, saw a 0");
-                            }
                         }
                     }
                     first = false;
@@ -989,14 +963,6 @@ public class Main
                 }
             }
 
-            for (String key : symbolTable.keySet())
-            {
-                System.out.println("Key is " + key + " Value is: " + symbolTable.get(key));
-            }
-
-            System.out.println(codeCounter + " initial codes written to table");
-            System.out.println("Size of input list: " + inputList.size());
-
             // LZW compression
             int buffer = 0;
             int bitCounter = 0;
@@ -1004,37 +970,30 @@ public class Main
             // First write num of columns to file
             out.writeInt(columnCount);
 
-            System.out.println(data[0].length + " columns");
-
             String s = inputList.get(0);
             String c = null;
-            System.out.println("first s: " + s);
-            for (int i = 1; i < inputList.size(); i++)
-            {
+
+            for (int i = 1; i < inputList.size(); i++) {
                 c = inputList.get(i);
-                if ((symbolTable.get(s.concat(",").concat(c))) != null)
-                {
+                if ((symbolTable.get(s.concat(",").concat(c))) != null) {
                     s = s.concat(",").concat(c);
-                }
-                else
-                {
+                } else {
                     // Output code for s
                     String code = symbolTable.get(s);
                     char[] ch = code.toCharArray();
-                    for (int k = 0; k < ch.length; k++)
-                    {
-                        if (bitCounter == 32)
-                        {
+                    for (int k = 0; k < ch.length; k++) {
+                        if (bitCounter == 32) {
                             out.writeInt(buffer);
                             buffer = 0;
                             bitCounter = 0;
                         }
 
                         buffer <<= 1;
-                        if(ch[k] == '0')
+                        if (ch[k] == '0') {
                             buffer |= 0;
-                        else
+                        } else {
                             buffer |= 1;
+                        }
                         bitCounter++;
                     }
 
@@ -1054,25 +1013,23 @@ public class Main
             // Output code for s;
             String code = symbolTable.get(s);
             char[] ch = code.toCharArray();
-            for (int k = 0; k < ch.length; k++)
-            {
-                if (bitCounter == 32)
-                {
+            for (int k = 0; k < ch.length; k++) {
+                if (bitCounter == 32) {
                     out.writeInt(buffer);
                     buffer = 0;
                     bitCounter = 0;
                 }
 
                 buffer <<= 1;
-                if(ch[k] == '0')
+                if (ch[k] == '0') {
                     buffer |= 0;
-                else
+                } else {
                     buffer |= 1;
+                }
                 bitCounter++;
             }
 
             // Clear buffer if there's bits leftover
-
             if (bitCounter != 0) {
                 buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
                 out.writeInt(buffer);
@@ -1096,10 +1053,11 @@ public class Main
         try {
             DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
             columnCount = dis.readInt();
+            buffer = dis.readInt();
             while (true) {
                 String symbol = "";
-                buffer = dis.readInt();
-                for (int i = 0; i < 32; i++) {
+
+                for (int i = 0; i < r; i++) {
                     if (bitCounter == 32) {
                         buffer = dis.readInt();
                         bitCounter = 0;
@@ -1114,23 +1072,21 @@ public class Main
                     buffer <<= 1;
                     bitCounter++;
                 }
-
-                //	System.out.println("Looking up " + symbol);				
                 for (String key : symbolTable.keySet()) {
 
                     if ((symbolTable.get(key)).equals(symbol)) {
-                        //	System.out.println("Found " + symbol + " at " + key);
                         finalResult = finalResult.concat(",").concat(key);
                         break;
                     }
                 }
             }
+
         } catch (EOFException e) {
             System.out.println("End of file");
             String[] valueList = finalResult.split(",");
+
             double[][] data = new double[20][columnCount];
             int current = 1; // Start at 2nd value - first value is always null.
-            System.out.println("Value list is: " + valueList.length);
 
             for (int j = 0; j < 20; j++) {
                 for (int i = 0; i < columnCount; i++) {
@@ -1273,8 +1229,6 @@ public class Main
             while (q.size() > 1) {
                 a = q.poll();
                 b = q.poll();
-                System.out.println("A symbol: " + a.symbol);
-                System.out.println("B symbol: " + b.symbol);
                 parent = new Node();
                 parent.value = a.value + b.value;
                 parent.symbol = "P".concat(Integer.toString(parentSymbol));
@@ -1293,7 +1247,6 @@ public class Main
         if (n == null) {
             return;
         }
-        System.out.println("Visiting node: " + n.symbol);
         n.code = id;
         PreOrder(n.left, id.concat("0"));
         PreOrder(n.right, id.concat("1"));

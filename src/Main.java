@@ -466,7 +466,7 @@ public class Main
     // an output file location, and a value setting the number of bits to use for levels (levels = 2^r),
     // quantizes the data using the appropriate scheme and writes the new data set to the output file location.
     public static void Quantize(String series, int scheme, String output, int r)
-    // <editor-fold desc="Quantizer Functions" >
+    // <editor-fold desc="Quantizer Functions" defaultstate="collapsed">
     {
         switch(scheme)
         {
@@ -663,7 +663,7 @@ public class Main
     // image showing the difference between the two input files.
     // Currently doesn't calculate noise, but outputs the appropriate visual stuff
     public static void VisualizeNoise(String f1, String f2, String out)
-    // <editor-fold>
+    // <editor-fold defaultstate="collapsed">
     {
         BufferedReader input1;
         BufferedReader input2;
@@ -806,6 +806,7 @@ public class Main
     // </editor-fold>
     
     
+    //<editor-fold desc="Encode/Decode Functions" defaultstate="collapsed">
     public static HashMap<String, String> Encode(String series, String output, int r, int scheme) 
     {
         switch (scheme) {
@@ -1526,6 +1527,7 @@ public class Main
 
         return 0;
     }
+    //</editor-fold>
     
     //Everything below this line is a supporting function (e.g. read/write arrays from/to files)
     //------------------------------------------------------------------------------------------

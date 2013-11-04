@@ -27,7 +27,14 @@ public class Main
     public static void main(String[] args) 
     {
         //Declarations and Initializations (To defaults if no command line args used to override)
-        String fx, fy, fz, fw;
+        String fx, fy, fz, fw, output_root, root;
+        String fxn, fyn, fzn, fwn;
+        int encode_scheme = 1;
+        int quant_scheme = 1;
+        int pc_scheme = 0;
+        int closest_scheme = 0;
+        int bits = 8;
+        double ex = 0, ey = 0, ez = 0, ew = 0;
         int[] closestx;
         int[] closesty;
         int[] closestz;
@@ -35,17 +42,63 @@ public class Main
         
         
         //Parse command line arguments
+        for(int i = 0; i < args.length-1; i++)
+        {
+            switch(args[i])
+            {
+                //Help flag
+                case"-h":
+                    System.out.println("Usage: java -jar Main.jar [options] <infile root>\nSee readme for options.");
+                    return;
+                //Quantizer scheme file flag
+                case "-b":
+                    bits = Integer.parseInt(args[i+1]);
+                    i++;
+                    break;
+                //Quantizer scheme file flag
+                case "-q":
+                    quant_scheme = Integer.parseInt(args[i+1]);
+                    i++;
+                    break;
+                //Encoder scheme file flag
+                case "-e":
+                    encode_scheme = Integer.parseInt(args[i+1]);
+                    i++;
+                    break;
+                //Closest scheme file flag
+                case "-c":
+                    closest_scheme = Integer.parseInt(args[i+1]);
+                    i++;
+                    break;
+                //Prediction scheme file flag
+                case "-p":
+                    pc_scheme = Integer.parseInt(args[i+1]);
+                    i++;
+                    break;
+                default:
+                    System.err.println("Unrecognized flag");
+                    return;
+            }
+        }
+        //Path to root
+        root = args[args.length-1];
         
         
         //Input files
-        fx = "Data/sampledata/X/1.csv";
-        fy = "Data/sampledata/Y/1.csv";
-        fz = "Data/sampledata/Z/1.csv";
-        fw = "Data/sampledata/W/1.csv";
-
-		String in = "quant.csv";
+        fx = root + "/X/1.csv";
+        fy = root + "/Y/1.csv";
+        fz = root + "/Z/1.csv";
+        fw = root + "/W/1.csv";
         
-        /*
+        fxn = fx;
+        fyn = fy;
+        fzn = fz;
+        fwn = fw;
+        
+        //set output root
+        output_root = root + "/output/";        
+        
+        
         //Find and list closest sensors (Task 1)
         closestx = SimilarSensor(fx);
         for(int i = 0; i < 20; i++)
@@ -64,26 +117,89 @@ public class Main
             System.out.println("Closest for w," + (i+1) + ": " + closestw[i*3 + 0] + "," + closestw[i*3 + 1] + "," + closestw[i*3 + 2]);
         
         
+        //Predictive coding (Task 2
+        if(pc_scheme == 0)
+            System.out.println("Using no pc");
+        else if(pc_scheme > 0 && pc_scheme < 5)
+        {
+            fxn = output_root + "xpc.csv";
+            fyn = output_root + "ypc.csv";
+            fzn = output_root + "zpc.csv";
+            fwn = output_root + "wpc.csv";
+            ex = PredictiveCoding(fx, pc_scheme, fxn, closestx, 0);
+            ey = PredictiveCoding(fy, pc_scheme, fyn, closesty, 0);
+            ez = PredictiveCoding(fz, pc_scheme, fzn, closestz, 0);
+            ew = PredictiveCoding(fw, pc_scheme, fwn, closestw, 0);
+        }
+        else if(pc_scheme >= 5 && pc_scheme < 7)
+        {
+            fxn = output_root + "xpc.csv";
+            fyn = output_root + "ypc.csv";
+            fzn = output_root + "zpc.csv";
+            fwn = output_root + "wpc.csv";
+            if(closest_scheme >= 0 && closest_scheme < 3)
+            {
+                ex = PredictiveCoding(fx, pc_scheme, fxn, closestx, closest_scheme);
+                ey = PredictiveCoding(fy, pc_scheme, fyn, closesty, closest_scheme);
+                ez = PredictiveCoding(fz, pc_scheme, fzn, closestz, closest_scheme);
+                ew = PredictiveCoding(fw, pc_scheme, fwn, closestw, closest_scheme);
+            }
+            else
+            {
+                System.err.println("Unrecognized Similarity Scheme, using L1 instead");
+                ex = PredictiveCoding(fx, pc_scheme, fxn, closestx, 0);
+                ey = PredictiveCoding(fy, pc_scheme, fyn, closesty, 0);
+                ez = PredictiveCoding(fz, pc_scheme, fzn, closestz, 0);
+                ew = PredictiveCoding(fw, pc_scheme, fwn, closestw, 0);
+            }
+        }
+        else
+            System.err.println("Unrecognized Predictive Scheme, using no pc instead");
+        
+        System.out.println("Absolute error resulting from Predictive Coding:");
+        System.out.println("x: " + ex);
+        System.out.println("y: " + ey);
+        System.out.println("z: " + ez);
+        System.out.println("w: " + ew);
+        
+        //Point to new location if necessary
+        fx = fxn;
+        fy = fyn;
+        fz = fzn;
+        fw = fwn;
         
         
-        //Predictive coding
-        System.out.println(PredictiveCoding(fx, 1, "output.csv", closestx, 0));
-        */
+        //Quantizer (Task 3)
+        if(quant_scheme == 0)
+            System.out.println("Using no quantization");
+        else if(quant_scheme > 0 && quant_scheme < 4)
+        {
+            fxn = output_root + "xquant.csv";
+            fyn = output_root + "yquant.csv";
+            fzn = output_root + "zquant.csv";
+            fwn = output_root + "wquant.csv";
+            Quantize(fx, quant_scheme, fxn, bits);
+            Quantize(fy, quant_scheme, fyn, bits);
+            Quantize(fz, quant_scheme, fzn, bits);
+            Quantize(fw, quant_scheme, fwn, bits);
+        }
+        else
+            System.err.println("Unrecognized Quantization Scheme, using no quantization instead");
         
-        //Quantizer
-        //Quantize(fx, 3, "output.csv", 8);
+        fx = fxn;
+        fy = fyn;
+        fz = fzn;
+        fw = fwn;
+        
+        //Encode (Task 4)
+        
+        //Decode (Task 5)
         
         //Visualizer
-        //VisualizeNoise(fx, "output.csv");
-
-        UniformQuantize(fx, "quant.csv", 3);
-        // HashMap<String,String> result = EO1(fx,16,"output.csv");
-        //double r = DO1(result, 16);
-        //HashMap<String,String> result = EO4(in,3,"output.csv");
-		//double r = DO4(result,16);
-		//HashMap<String,String> result = EO2(in,3,"output.csv");
-		//double r = DO2(result,3);
-       	HashMap<String,String> result = EO3(in,3,"output.csv");
+        VisualizeNoise(root + "/X/1.csv", fx, root + "xdiff.bmp");
+        VisualizeNoise(root + "/Y/1.csv", fy, root + "ydiff.bmp");
+        VisualizeNoise(root + "/Z/1.csv", fz, root + "zdiff.bmp");
+        VisualizeNoise(root + "/W/1.csv", fw, root + "wdiff.bmp");
     }
     
     //Given a multivariate time series (in csv form with each line as a different sensor), returns an array
@@ -543,13 +659,15 @@ public class Main
     }
     // </editor-fold>
     
-    //Currently doesn't calculate noise, but outputs the appropriate visual stuff
-    public static void VisualizeNoise(String f1, String f2)
+    //Given two multivariate time series (in csv form with each line as a different sensor), outputs an 
+    // image showing the difference between the two input files.
+    // Currently doesn't calculate noise, but outputs the appropriate visual stuff
+    public static void VisualizeNoise(String f1, String f2, String out)
     // <editor-fold>
     {
         BufferedReader input1;
         BufferedReader input2;
-        String outputfile = "output.bmp";
+        String outputfile = out;
         double[][] data1 = new double[20][];
         double[][] data2 = new double[20][];
         double[][] diff = new double[20][];
@@ -688,7 +806,8 @@ public class Main
     // </editor-fold>
     
     
-    public static HashMap<String, String> Encode(String series, String output, int r, int scheme) {
+    public static HashMap<String, String> Encode(String series, String output, int r, int scheme) 
+    {
         switch (scheme) {
             case 1:
                 return EO1(series, r, output);
@@ -710,7 +829,8 @@ public class Main
 
     }
 
-    public static double Decode(HashMap<String, String> symbolTable, int scheme, int r) {
+    public static double Decode(HashMap<String, String> symbolTable, int scheme, int r) 
+    {
         switch (scheme) {
             case 1:
                 return DO1(symbolTable, r);
@@ -728,7 +848,8 @@ public class Main
         return 0;
     }
 
-    public static HashMap<String, String> EO1(String series, int r, String output) {
+    public static HashMap<String, String> EO1(String series, int r, String output) 
+    {
         double data[][] = ReadData(series);
         HashMap<String, String> symbolTable = new HashMap();
         int symbolCounter = 0;
@@ -801,7 +922,8 @@ public class Main
         return symbolTable;
     }
 
-    public static double DO1(HashMap<String, String> symbolTable, int r) {
+    public static double DO1(HashMap<String, String> symbolTable, int r) 
+    {
         int symbolCount;
         int symbolsRead = 0;
         int buffer;
@@ -861,7 +983,8 @@ public class Main
         return 0;
     }
 
-    public static HashMap<String, String> EO2(String series, int r, String output) {
+    public static HashMap<String, String> EO2(String series, int r, String output) 
+    {
         double data[][] = ReadData(series);
         HashMap<String, String> symbolTable = new HashMap();
         int symbolCounter = 0;
@@ -1008,7 +1131,8 @@ public class Main
         return symbolTable;
     }
 
-    public static double DO2(HashMap<String, String> symbolTable, int r) {
+    public static double DO2(HashMap<String, String> symbolTable, int r) 
+    {
         int buffer;
         int bitMask = 1 << 31;
         int columnCount = 0;
@@ -1089,7 +1213,8 @@ public class Main
         return 0;
     }
 
-    public static HashMap<String, String> EO3(String series, int r, String output) {
+    public static HashMap<String, String> EO3(String series, int r, String output)
+    {
         double data[][] = ReadData(series);
         HashMap<String, Integer> freqTable = new HashMap();
         HashMap<String, String> symbolTable = new HashMap();
@@ -1151,7 +1276,8 @@ public class Main
         return symbolTable;
     }
 
-    public static HashMap<String, String> EO4(String series, int r, String output) {
+    public static HashMap<String, String> EO4(String series, int r, String output) 
+    {
         double data[][] = ReadData(series);
         HashMap<String, String> symbolTable = new HashMap();
         int symbolCounter = 0;
@@ -1273,7 +1399,8 @@ public class Main
         return symbolTable;
     }
 
-    public static double DO4(HashMap<String, String> symbolTable, int r) {
+    public static double DO4(HashMap<String, String> symbolTable, int r) 
+    {
         int buffer;
         int bitMask = 1 << 31;
         int columnCount = 0;
@@ -1338,6 +1465,7 @@ public class Main
 
         return 0;
     }
+    
     //Everything below this line is a supporting function (e.g. read/write arrays from/to files)
     //------------------------------------------------------------------------------------------
     // <editor-fold desc="Supporting Functions" defaultstate="collapsed">

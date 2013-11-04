@@ -39,6 +39,8 @@ public class Main
         int[] closesty;
         int[] closestz;
         int[] closestw;
+        HashMap<String,String> symbolTable = null;
+        Node tree = null;
         
         
         //Parse command line arguments
@@ -192,57 +194,70 @@ public class Main
         fw = fwn;
 
 
-        //Encode and Decode (Task 4)        
-        HashMap<String,String> symbolTable = null;
-        Node tree = null;
-
+        //Encode and Decode (Task 4)
         switch(encode_scheme)
         {
         	case 1:
-        		symbolTable = EO1(fx,bits,"fxout");
-        		DO1(symbolTable,bits,"fxout","fxdecode.csv");
-        		symbolTable = EO1(fy,bits,"fyout");
-        		DO1(symbolTable,bits,"fyout","fydecode.csv");
-        		symbolTable = EO1(fz,bits,"fzout");
-        		DO1(symbolTable,bits,"fzout","fzdecode.csv");
-        		symbolTable = EO1(fw,bits,"fwout");
-        		DO1(symbolTable,bits,"fwout","fwdecode.csv");
+                        fxn = output_root + "fxdecode.csv";
+                        fyn = output_root + "fydecode.csv";
+                        fzn = output_root + "fzdecode.csv";
+                        fwn = output_root + "fwdecode.csv";
+        		symbolTable = EO1(fx,bits, output_root + "fxout");
+        		DO1(symbolTable,bits, output_root + "fxout", fxn);
+        		symbolTable = EO1(fy,bits, output_root + "fyout");
+        		DO1(symbolTable,bits, output_root + "fyout", fyn);
+        		symbolTable = EO1(fz,bits, output_root + "fzout");
+        		DO1(symbolTable,bits, output_root + "fzout", fzn);
+        		symbolTable = EO1(fw,bits, output_root + "fwout");
+        		DO1(symbolTable,bits, output_root + "fwout", fwn);
 
         		break;
 
         	case 2:
-        		symbolTable = EO2(fx,bits,"fxout");
-        		DO2(symbolTable,bits,"fxout","fxdecode.csv");
-        		symbolTable = EO2(fy,bits,"fyout");
-        		DO2(symbolTable,bits,"fyout","fydecode.csv");
-        		symbolTable = EO2(fz,bits,"fzout");
-        		DO2(symbolTable,bits,"fzout","fzdecode.csv");
-        		symbolTable = EO2(fw,bits,"fwout");
-        		DO2(symbolTable,bits,"fwout","fwdecode.csv");
+                        fxn = output_root + "fxdecode.csv";
+                        fyn = output_root + "fydecode.csv";
+                        fzn = output_root + "fzdecode.csv";
+                        fwn = output_root + "fwdecode.csv";
+        		symbolTable = EO2(fx,bits, output_root + "fxout");
+        		DO2(symbolTable,bits, output_root + "fxout", fxn);
+        		symbolTable = EO2(fy,bits, output_root + "fyout");
+        		DO2(symbolTable,bits, output_root + "fyout", fyn);
+        		symbolTable = EO2(fz,bits, output_root + "fzout");
+        		DO2(symbolTable,bits, output_root + "fzout", fzn);
+        		symbolTable = EO2(fw,bits, output_root + "fwout");
+        		DO2(symbolTable,bits, output_root + "fwout", fwn);
 
         		break;
 
         	case 3:
-        		tree = EO3(fx,bits,"fxout");
-        		DO3(tree,bits,"fxout","fxdecode.csv");
-        		tree = EO3(fy,bits,"fyout");
-        		DO3(tree,bits,"fyout","fydecode.csv");
-        		tree = EO3(fz,bits,"fzout");
-        		DO3(tree,bits,"fzout","fzdecode.csv");
-        		tree = EO3(fw,bits,"fwout");
-        		DO3(tree,bits,"fwout","fwdecode.csv");
+                        fxn = output_root + "fxdecode.csv";
+                        fyn = output_root + "fydecode.csv";
+                        fzn = output_root + "fzdecode.csv";
+                        fwn = output_root + "fwdecode.csv";
+        		tree = EO3(fx,bits, output_root + "fxout");
+        		DO3(tree,bits, output_root + "fxout", fxn);
+        		tree = EO3(fy,bits, output_root + "fyout");
+        		DO3(tree,bits, output_root + "fyout", fyn);
+        		tree = EO3(fz,bits, output_root + "fzout");
+        		DO3(tree,bits, output_root + "fzout", fzn);
+        		tree = EO3(fw,bits, output_root + "fwout");
+        		DO3(tree,bits, output_root + "fwout", fwn);
 
         		break;
 
         	case 4:
-        		symbolTable = EO4(fx,bits,"fxout");
-        		DO4(symbolTable,bits,"fxout","fxdecode.csv");
-        		symbolTable = EO4(fy,bits,"fyout");
-        		DO4(symbolTable,bits,"fyout","fydecode.csv");
-        		symbolTable = EO4(fz,bits,"fzout");
-        		DO4(symbolTable,bits,"fzout","fzdecode.csv");
-        		symbolTable = EO4(fw,bits,"fwout");
-        		DO4(symbolTable,bits,"fwout","fwdecode.csv");
+                        fxn = output_root + "fxdecode.csv";
+                        fyn = output_root + "fydecode.csv";
+                        fzn = output_root + "fzdecode.csv";
+                        fwn = output_root + "fwdecode.csv";
+        		symbolTable = EO4(fx,bits, output_root + "fxout");
+        		DO4(symbolTable,bits, output_root + "fxout", fxn);
+        		symbolTable = EO4(fy,bits, output_root + "fyout");
+        		DO4(symbolTable,bits, output_root + "fyout", fyn);
+        		symbolTable = EO4(fz,bits, output_root + "fzout");
+        		DO4(symbolTable,bits, output_root + "fzout", fzn);
+        		symbolTable = EO4(fw,bits, output_root + "fwout");
+        		DO4(symbolTable,bits, output_root + "fwout", fwn);
 
         		break;
 
@@ -252,12 +267,16 @@ public class Main
 
         }
         
+        fx = fxn;
+        fy = fyn;
+        fz = fzn;
+        fw = fwn;
         
         //Visualizer
-        VisualizeNoise(root + "/X/1.csv", fx, root + "xdiff.bmp");
-        VisualizeNoise(root + "/Y/1.csv", fy, root + "ydiff.bmp");
-        VisualizeNoise(root + "/Z/1.csv", fz, root + "zdiff.bmp");
-        VisualizeNoise(root + "/W/1.csv", fw, root + "wdiff.bmp");
+        VisualizeNoise(root + "/X/1.csv", fx, output_root + "xdiff.bmp");
+        VisualizeNoise(root + "/Y/1.csv", fy, output_root + "ydiff.bmp");
+        VisualizeNoise(root + "/Z/1.csv", fz, output_root + "zdiff.bmp");
+        VisualizeNoise(root + "/W/1.csv", fw, output_root + "wdiff.bmp");
     }
     
     //Given a multivariate time series (in csv form with each line as a different sensor), returns an array
@@ -1610,10 +1629,13 @@ public class Main
     public static int WriteData(double[][] data, String filepath)
     {
         BufferedWriter output;
+        File f = new File(filepath);
+        f = new File(f.getParent());
         String line;
         
         try
         {
+            f.mkdirs();
             output = new BufferedWriter(new FileWriter(filepath));
         }
         //Error occurred, return -1

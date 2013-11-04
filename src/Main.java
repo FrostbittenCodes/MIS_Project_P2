@@ -50,7 +50,7 @@ public class Main
                 case"-h":
                     System.out.println("Usage: java -jar Main.jar [options] <infile root>\nSee readme for options.");
                     return;
-                //Quantizer scheme file flag
+                //bits scheme file flag
                 case "-b":
                     bits = Integer.parseInt(args[i+1]);
                     i++;
@@ -682,6 +682,7 @@ public class Main
         int color2 = 0xff0000; //upper color
         BufferedImage output;
         int background = 0xffffff;
+        int sum = 0;
         
         
         //Open the two file readers

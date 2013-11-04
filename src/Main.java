@@ -190,10 +190,68 @@ public class Main
         fy = fyn;
         fz = fzn;
         fw = fwn;
+
+
+        //Encode and Decode (Task 4)        
+        HashMap<String,String> symbolTable = null;
+        Node tree = null;
+
+        switch(encode_scheme)
+        {
+        	case 1:
+        		symbolTable = EO1(fx,bits,"fxout");
+        		DO1(symbolTable,bits,"fxout","fxdecode.csv");
+        		symbolTable = EO1(fy,bits,"fyout");
+        		DO1(symbolTable,bits,"fyout","fydecode.csv");
+        		symbolTable = EO1(fz,bits,"fzout");
+        		DO1(symbolTable,bits,"fzout","fzdecode.csv");
+        		symbolTable = EO1(fw,bits,"fwout");
+        		DO1(symbolTable,bits,"fwout","fwdecode.csv");
+
+        		break;
+
+        	case 2:
+        		symbolTable = EO2(fx,bits,"fxout");
+        		DO2(symbolTable,bits,"fxout","fxdecode.csv");
+        		symbolTable = EO2(fy,bits,"fyout");
+        		DO2(symbolTable,bits,"fyout","fydecode.csv");
+        		symbolTable = EO2(fz,bits,"fzout");
+        		DO2(symbolTable,bits,"fzout","fzdecode.csv");
+        		symbolTable = EO2(fw,bits,"fwout");
+        		DO2(symbolTable,bits,"fwout","fwdecode.csv");
+
+        		break;
+
+        	case 3:
+        		tree = EO3(fx,bits,"fxout");
+        		DO3(tree,bits,"fxout","fxdecode.csv");
+        		tree = EO3(fy,bits,"fyout");
+        		DO3(tree,bits,"fyout","fydecode.csv");
+        		tree = EO3(fz,bits,"fzout");
+        		DO3(tree,bits,"fzout","fzdecode.csv");
+        		tree = EO3(fw,bits,"fwout");
+        		DO3(tree,bits,"fwout","fwdecode.csv");
+
+        		break;
+
+        	case 4:
+        		symbolTable = EO4(fx,bits,"fxout");
+        		DO4(symbolTable,bits,"fxout","fxdecode.csv");
+        		symbolTable = EO4(fy,bits,"fyout");
+        		DO4(symbolTable,bits,"fyout","fydecode.csv");
+        		symbolTable = EO4(fz,bits,"fzout");
+        		DO4(symbolTable,bits,"fzout","fzdecode.csv");
+        		symbolTable = EO4(fw,bits,"fwout");
+        		DO4(symbolTable,bits,"fwout","fwdecode.csv");
+
+        		break;
+
+        	default:
+        		break;
+
+
+        }
         
-        //Encode (Task 4)
-        
-        //Decode (Task 5)
         
         //Visualizer
         VisualizeNoise(root + "/X/1.csv", fx, root + "xdiff.bmp");
@@ -808,47 +866,6 @@ public class Main
     
     
     //<editor-fold desc="Encode/Decode Functions" defaultstate="collapsed">
-    public static HashMap<String, String> Encode(String series, String output, int r, int scheme) 
-    {
-        switch (scheme) {
-            case 1:
-                return EO1(series, r, output);
-
-            case 2:
-//                return E02(series,r,output);
-
-            case 3:
-//                return E03(series,output);
-
-            case 4:
-                return EO4(series, r, output);
-
-            default:
-                break;
-
-        }
-        return null;
-
-    }
-
-    public static double Decode(HashMap<String, String> symbolTable, int scheme, int r) 
-    {
-        switch (scheme) {
-            case 1:
-                return DO1(symbolTable, r);
-            case 2:
-            //return DO2(symbolTable,scheme);
-            case 3:
-            //return DO3(symbolTable,scheme);
-            case 4:
-                //return DO4(symbolTable,scheme);
-
-            default:
-                break;
-        }
-
-        return 0;
-    }
 
     public static HashMap<String, String> EO1(String series, int r, String output) 
     {
@@ -857,7 +874,7 @@ public class Main
         int symbolCounter = 0;
 
         try {
-            DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
+            DataOutputStream out = new DataOutputStream(new FileOutputStream(output));
             for (int j = 0; j < 20; j++) {
                 for (int i = 0; i < data[j].length; i++) {
                     String sKey = String.valueOf(data[j][i]);
@@ -922,7 +939,7 @@ public class Main
         return symbolTable;
     }
 
-    public static double DO1(HashMap<String, String> symbolTable, int r) 
+    public static double DO1(HashMap<String, String> symbolTable, int r, String input, String output) 
     {
         int symbolCount;
         int symbolsRead = 0;
@@ -932,7 +949,7 @@ public class Main
         int bitCounter = 0;
 
         try {
-            DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            DataInputStream dis = new DataInputStream(new FileInputStream(input));
             symbolCount = dis.readInt();
             columnCount = symbolCount / 20;
             double[][] data = new double[20][columnCount];
@@ -970,7 +987,7 @@ public class Main
                     }
                 }
             }
-            WriteData(data, "decode.csv");
+            WriteData(data, output);
         } catch (EOFException e) {
             System.out.println("End of file.");
             System.out.println(symbolsRead + " symbols read.");
@@ -991,7 +1008,7 @@ public class Main
         int columnCount = data[0].length;
 
         try {
-            DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
+            DataOutputStream out = new DataOutputStream(new FileOutputStream(output));
             for (int j = 0; j < 20; j++) {
                 for (int i = 0; i < data[j].length; i++) {
                     // Fill up hash map.  Cast to string
@@ -1130,7 +1147,7 @@ public class Main
         return symbolTable;
     }
 
-    public static double DO2(HashMap<String, String> symbolTable, int r) 
+    public static double DO2(HashMap<String, String> symbolTable, int r, String input, String output) 
     {
         int buffer;
         int bitMask = 1 << 31;
@@ -1140,7 +1157,7 @@ public class Main
         ArrayList<String> resultList = new ArrayList<>();
 
         try {
-            DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            DataInputStream dis = new DataInputStream(new FileInputStream(input));
             columnCount = dis.readInt();
 
             data = new double[20][columnCount];
@@ -1200,7 +1217,7 @@ public class Main
                     curInt++;
                 }
             }
-            WriteData(data, "decode.csv");
+            WriteData(data, output);
 
         } catch (FileNotFoundException e) {
             System.out.println("I/O file open failure");
@@ -1220,7 +1237,7 @@ public class Main
         Node tree = null;
 
         try {
-            DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
+            DataOutputStream out = new DataOutputStream(new FileOutputStream(output));
             for (int j = 0; j < 20; j++) {
                 for (int i = 0; i < data[j].length; i++) {
                     String sKey = String.valueOf(data[j][i]);
@@ -1296,7 +1313,7 @@ public class Main
         return tree;
     }
 
-    public static double DO3(Node head, int r) {
+    public static double DO3(Node head, int r, String input, String output) {
         int buffer;
         int bitMask = 1 << 31;
         int columnCount = 0;
@@ -1305,7 +1322,7 @@ public class Main
         Boolean first = true;
 
         try {
-            DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            DataInputStream dis = new DataInputStream(new FileInputStream(input));
             columnCount = dis.readInt();
             data = new double[20][columnCount];
             buffer = dis.readInt();
@@ -1348,7 +1365,7 @@ public class Main
         } catch (IOException e) {
             System.out.println("I/O binary read failure");
         }
-        WriteData(data, "decode.csv");
+        WriteData(data, output);
 
         return 0;
 
@@ -1366,7 +1383,7 @@ public class Main
 
         try {
             // Fill up table with primary symbols first
-            DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
+            DataOutputStream out = new DataOutputStream(new FileOutputStream(output));
             for (int j = 0; j < 20; j++) {
                 for (int i = 0; i < data[j].length; i++) {
                     String sKey = String.valueOf(data[j][i]);
@@ -1463,7 +1480,7 @@ public class Main
         return symbolTable;
     }
 
-    public static double DO4(HashMap<String, String> symbolTable, int r) 
+    public static double DO4(HashMap<String, String> symbolTable, int r, String input, String output) 
     {
         int buffer;
         int bitMask = 1 << 31;
@@ -1472,7 +1489,7 @@ public class Main
         String finalResult = "";
 
         try {
-            DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            DataInputStream dis = new DataInputStream(new FileInputStream(input));
             columnCount = dis.readInt();
             buffer = dis.readInt();
             while (true) {
@@ -1518,7 +1535,7 @@ public class Main
 
                 }
             }
-            WriteData(data, "decode.csv");
+            WriteData(data, output);
 
         } catch (FileNotFoundException e) {
             System.out.println("I/O file open failure");

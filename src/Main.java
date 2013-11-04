@@ -911,8 +911,6 @@ public class Main
                 buffersWritten++;
             }
 
-            System.out.println("Symbols written: " + symbolCounter);
-            System.out.println("Buffers written: " + buffersWritten);
         } catch (FileNotFoundException e) {
             System.out.println("I/O file open failure");
         } catch (IOException e) {
@@ -962,6 +960,7 @@ public class Main
                     // If found, write to array.
                     for (String key : symbolTable.keySet()) {
                         if ((symbolTable.get(key)).equals(symbol)) {
+                            System.out.println("Casting to double: " + key);
                             data[j][i] = Double.parseDouble(key);
                             symbolsRead++;
                             break;
@@ -969,7 +968,6 @@ public class Main
                     }
                 }
             }
-            System.out.println("Symbols read: " + symbolsRead);
             WriteData(data, "decode.csv");
         } catch (EOFException e) {
             System.out.println("End of file.");
@@ -1013,6 +1011,7 @@ public class Main
 
             symbolCounter = 0;
             out.writeInt(columnCount);
+
             // RLE
             int buffer = 0;
             int bitCounter = 0;
@@ -1026,7 +1025,6 @@ public class Main
                         previousKey = curKey;
                     } else {
                         symbolCounter += runCounter;
-                        System.out.println("Run of " + runCounter + " symbols");
                         String symbol = symbolTable.get(previousKey);
 
                         char[] c = symbol.toCharArray();
@@ -1045,7 +1043,7 @@ public class Main
                             bitCounter++;
                         }
 
-			//now write frequency
+			             //now write frequency
                         String freq = Integer.toBinaryString(runCounter);
                         while (freq.length() < 32) {
                             freq = "0".concat(freq);
@@ -1075,7 +1073,6 @@ public class Main
 
             if (runCounter != 0) {
                 symbolCounter += runCounter;
-                System.out.println("Last run is " + runCounter + " symbols");
                 String symbol = symbolTable.get(previousKey);
 
                 char[] c = symbol.toCharArray();
@@ -1188,8 +1185,6 @@ public class Main
                         for (int x = 0; x < finalFreq; x++) {
                             resultList.add(key);
                         }
-//                        data[j][i] = Double.parseDouble(key);
-//                        symbolsRead++; 
                         break;
                     }
                 }
@@ -1213,14 +1208,14 @@ public class Main
         return 0;
     }
 
-    public static HashMap<String, String> EO3(String series, int r, String output)
+    public static Node EO3(String series, int r, String output) 
     {
         double data[][] = ReadData(series);
         HashMap<String, Integer> freqTable = new HashMap();
         HashMap<String, String> symbolTable = new HashMap();
         int columnCount = data[0].length;
-        PriorityQueue<Node> q = new PriorityQueue<>(10,nodeComparator);
-		
+        PriorityQueue<Node> q = new PriorityQueue<>(10, nodeComparator);
+        Node tree = null;
 
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream("encode"));
@@ -1243,37 +1238,118 @@ public class Main
                 q.add(newNode);
             }
 
-//			PriorityQueue<Node> temp = new PriorityQueue<Node>(q);
-/*			DEBUG PRINTING:
-             while (!temp.isEmpty()){
-             Node cur = temp.remove();
-             System.out.println("Symbol: " + cur.symbol + " Value: " + cur.value);
-             }*/
             Node root = buildTree(q);
 
-			// fill up symbol table
-            symbolTable.put(root.left.symbol, "0");
-            symbolTable.put(root.right.symbol, "1");
-            root = root.right;
-            while (root.right != null) {
-                symbolTable.put(root.left.symbol, symbolTable.get(root.symbol).concat("0"));
-                symbolTable.put(root.right.symbol, symbolTable.get(root.symbol).concat("1"));
-                root = root.right;
+            PreOrder(root, "");
+            FillTable(root, symbolTable);
+
+            tree = root;
+
+            //Now we have the symbols... write to file
+            int bitCounter = 0;
+            int buffer = 0;
+            out.writeInt(columnCount);
+            int buffersWritten = 0;
+            Boolean first = true;
+            for (int j = 0; j < 20; j++) {
+                for (int i = 0; i < data[j].length; i++) {
+                    String symbol = symbolTable.get(String.valueOf(data[j][i]));
+                    if (symbol != null) {
+                        char[] c = symbol.toCharArray();
+                        for (int k = 0; k < c.length; k++) {
+                            if (bitCounter == 32) {
+                                out.writeInt(buffer);
+                                buffer = 0;
+                                bitCounter = 0;
+                                buffersWritten++;
+                            }
+                            buffer <<= 1;
+                            if (c[k] == '0') {
+                                buffer |= 0;
+                            } else {
+                                buffer |= 1;
+                            }
+                            bitCounter++;
+                        }
+                    } else {
+
+                        System.out.println("Critical error symbol not found for " + data[j][i]);
+                    }
+                }
             }
 
-            for (String key : symbolTable.keySet()) {
-                System.out.println("Key: " + key + " Value: " + symbolTable.get(key));
-
+            if (bitCounter != 0) {
+                buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
+                out.writeInt(buffer);
+                buffersWritten++;
             }
+            System.out.println("Buffers written: " + buffersWritten);
 
         } catch (FileNotFoundException f) {
             System.out.println("Error");
+        } catch (IOException e) {
+            System.out.println("I/O Binary write failure");
         }
-        /*catch(IOException e){
-         System.out.println("I/O Binary write failure");
-         }*/
 
-        return symbolTable;
+        return tree;
+    }
+
+    public static double DO3(Node head, int r) {
+        int buffer;
+        int bitMask = 1 << 31;
+        int columnCount = 0;
+        int bitCounter = 0;
+        double[][] data = null;
+        Boolean first = true;
+
+        try {
+            DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
+            columnCount = dis.readInt();
+            data = new double[20][columnCount];
+            buffer = dis.readInt();
+
+            for (int j = 0; j < 20; j++) {
+                for (int i = 0; i < data[j].length; i++) {
+                    Node root = head;
+                    Node prev = null;
+                    while (root.right != null || root.left != null) {
+                        String finalSymbol = "";
+                        String finalKey = "";
+                        if (bitCounter == 32) {
+                            buffer = dis.readInt();
+                            bitCounter = 0;
+                        }
+
+                        if ((buffer & bitMask) == bitMask) {
+                            prev = root;
+                            root = root.right;
+                            buffer <<= 1;
+                            bitCounter++;
+
+                        } else {
+                            prev = root;
+                            root = root.left;
+                            buffer <<= 1;
+                            bitCounter++;
+                        }
+                    }
+                    first = false;
+                    data[j][i] = Double.parseDouble(root.symbol);
+                    // System.out.println("Data is: " + data[j][i]);
+                }
+            }
+
+        } catch (EOFException e) {
+            System.out.println("End of file.");
+        } catch (FileNotFoundException e) {
+            System.out.println("I/O file open failure");
+        } catch (IOException e) {
+            System.out.println("I/O binary read failure");
+        }
+        WriteData(data, "decode.csv");
+
+        return 0;
+
     }
 
     public static HashMap<String, String> EO4(String series, int r, String output) 
@@ -1284,6 +1360,7 @@ public class Main
         int codeCounter = 0;
         int buffersWritten = 0;
         int columnCount = data[0].length;
+        ArrayList<String> inputList = new ArrayList<>();
 
         try {
             // Fill up table with primary symbols first
@@ -1294,85 +1371,73 @@ public class Main
                     String s = symbolTable.get(sKey);
                     if (s == null) {
                         String codeStr = Integer.toBinaryString(codeCounter);
-                        while (codeStr.length() < 32) {
+                        while (codeStr.length() < r) {
                             codeStr = "0".concat(codeStr);
                         }
                         symbolTable.put(sKey, codeStr);
                         codeCounter++;
                     }
+                    inputList.add(sKey);
                 }
             }
-            System.out.println(codeCounter + " initial codes written to table");
 
             // LZW compression
-            Boolean first = true;
-            String s = "";
-            String c ;
             int buffer = 0;
             int bitCounter = 0;
 
             // First write num of columns to file
             out.writeInt(columnCount);
-            System.out.println(data[0].length + " columns");
-            for (int j = 0; j < 20; j++) {
-                for (int i = 0; i < data[j].length; i++) {
-                    if (first) {
-                        s = String.valueOf(data[j][0]);
-                        c = String.valueOf(data[j][1]);
-                        i = i + 1;
-                        first = false;
-                    } else {
-                        c = String.valueOf(data[j][i]);
-                    }
-                    String t = s.concat(",");
-                    t = t.concat(c);
-                    if ((symbolTable.get(t)) != null) {
-                        s = s.concat(",");
-                        s = s.concat(c);
-                    } else {
-                        String symbol = symbolTable.get(s);
-                        char[] ch = symbol.toCharArray();
-                        for (int k = 0; k < ch.length; k++) {
-                            if (bitCounter == 32) {
-                                out.writeInt(buffer);
-                                buffer = 0;
-                                bitCounter = 0;
-                                buffersWritten++;
-                            }
-                            buffer <<= 1;
-                            if (ch[k] == '0') {
-                                buffer |= 0;
-                            } else {
-                                buffer |= 1;
-                            }
-                            bitCounter++;
-                        }
-                        String codeStr = Integer.toBinaryString(codeCounter);
-                        while (codeStr.length() < 32) {
-                            codeStr = "0".concat(codeStr);
-                        }
-                        String n = s.concat(",");
-                        n = n.concat(c);
-                        symbolTable.put(s.concat(",").concat(c), codeStr);
-                        s = c;
-                        codeCounter++;
 
+            String s = inputList.get(0);
+            String c = null;
+
+            for (int i = 1; i < inputList.size(); i++) {
+                c = inputList.get(i);
+                if ((symbolTable.get(s.concat(",").concat(c))) != null) {
+                    s = s.concat(",").concat(c);
+                } else {
+                    // Output code for s
+                    String code = symbolTable.get(s);
+                    char[] ch = code.toCharArray();
+                    for (int k = 0; k < ch.length; k++) {
+                        if (bitCounter == 32) {
+                            out.writeInt(buffer);
+                            buffer = 0;
+                            bitCounter = 0;
+                        }
+
+                        buffer <<= 1;
+                        if (ch[k] == '0') {
+                            buffer |= 0;
+                        } else {
+                            buffer |= 1;
+                        }
+                        bitCounter++;
                     }
+
+                    // Add s+c to dict with new code
+                    String codeStr = Integer.toBinaryString(codeCounter);
+                    while (codeStr.length() < r) {
+                        codeStr = "0".concat(codeStr);
+                    }
+                    symbolTable.put(s.concat(",").concat(c), codeStr);
+                    codeCounter++;
+
+                    // s = c
+                    s = c;
                 }
-
             }
 
-            // finally, output s
-            String symbol = symbolTable.get(s);
-            System.out.println("Finally outputting s: " + symbol);
-            char[] ch = symbol.toCharArray();
+            // Output code for s;
+            String code = symbolTable.get(s);
+            char[] ch = code.toCharArray();
             for (int k = 0; k < ch.length; k++) {
                 if (bitCounter == 32) {
                     out.writeInt(buffer);
                     buffer = 0;
                     bitCounter = 0;
-                    buffersWritten++;
                 }
+
                 buffer <<= 1;
                 if (ch[k] == '0') {
                     buffer |= 0;
@@ -1382,10 +1447,10 @@ public class Main
                 bitCounter++;
             }
 
+            // Clear buffer if there's bits leftover
             if (bitCounter != 0) {
                 buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
                 out.writeInt(buffer);
-                buffersWritten++;
             }
 
         } catch (FileNotFoundException e) {
@@ -1393,9 +1458,6 @@ public class Main
         } catch (IOException e) {
             System.out.println("I/O binary write failure");
         }
-
-        System.out.println("Buffers written: " + buffersWritten);
-
         return symbolTable;
     }
 
@@ -1410,10 +1472,11 @@ public class Main
         try {
             DataInputStream dis = new DataInputStream(new FileInputStream("encode"));
             columnCount = dis.readInt();
+            buffer = dis.readInt();
             while (true) {
                 String symbol = "";
-                buffer = dis.readInt();
-                for (int i = 0; i < 32; i++) {
+
+                for (int i = 0; i < r; i++) {
                     if (bitCounter == 32) {
                         buffer = dis.readInt();
                         bitCounter = 0;
@@ -1428,23 +1491,21 @@ public class Main
                     buffer <<= 1;
                     bitCounter++;
                 }
-
-                //	System.out.println("Looking up " + symbol);				
                 for (String key : symbolTable.keySet()) {
 
                     if ((symbolTable.get(key)).equals(symbol)) {
-                        //	System.out.println("Found " + symbol + " at " + key);
                         finalResult = finalResult.concat(",").concat(key);
                         break;
                     }
                 }
             }
+
         } catch (EOFException e) {
             System.out.println("End of file");
             String[] valueList = finalResult.split(",");
+
             double[][] data = new double[20][columnCount];
             int current = 1; // Start at 2nd value - first value is always null.
-            System.out.println("Value list is: " + valueList.length);
 
             for (int j = 0; j < 20; j++) {
                 for (int i = 0; i < columnCount; i++) {
@@ -1628,16 +1689,36 @@ public class Main
                 b = q.poll();
                 parent = new Node();
                 parent.value = a.value + b.value;
-                parent.symbol = Integer.toBinaryString(parentSymbol);
+                parent.symbol = "P".concat(Integer.toString(parentSymbol));
                 a.parent = parent;
                 b.parent = parent;
-                parent.left = b;
-                parent.right = a;
+                parent.right = b;
+                parent.left = a;
                 parentSymbol++;
                 q.add(parent);
-            }          
+            }
             return q.poll();
         }
+    }
+
+    public static void PreOrder(Node n, String id) {
+        if (n == null) {
+            return;
+        }
+        n.code = id;
+        PreOrder(n.left, id.concat("0"));
+        PreOrder(n.right, id.concat("1"));
+    }
+
+    public static void FillTable(Node n, HashMap<String, String> symbolTable) {
+        if (n == null) {
+            return;
+        }
+        if (n.code != null) {
+            symbolTable.put(n.symbol, n.code);
+        }
+        FillTable(n.left, symbolTable);
+        FillTable(n.right, symbolTable);
     }
 
     public static Comparator<Node> nodeComparator = new Comparator<Node>() {

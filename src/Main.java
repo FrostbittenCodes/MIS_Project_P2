@@ -68,15 +68,15 @@ public class Main
         */
         
         //Quantizer
-        UniformQuantize(fx, "quant.csv", 4);
+        UniformQuantize(fx, "quant.csv", 3);
         // HashMap<String,String> result = EO1(fx,16,"output.csv");
         //double r = DO1(result, 16);
-        //HashMap<String,String> result = EO4(in,3,"output.csv");
-		//double r = DO4(result,16);
+        HashMap<String,String> result = EO4(in,16,"output.csv");
+		double r = DO4(result,16);
 		//HashMap<String,String> result = EO2(in,3,"output.csv");
 		//double r = DO2(result,3);
-       	Node tree = EO3(in,4,"output.csv");
-		double r = DO3(tree,4);
+       	//Node tree = EO3(in,4,"output.csv");
+		//double r = DO3(tree,4);
 		
     }
     
@@ -968,6 +968,7 @@ public class Main
         int codeCounter = 0;
         int buffersWritten = 0;
         int columnCount = data[0].length;
+        ArrayList<String> inputList = new ArrayList<String>();
 
         try {
             // Fill up table with primary symbols first
@@ -978,98 +979,103 @@ public class Main
                     String s = symbolTable.get(sKey);
                     if (s == null) {
                         String codeStr = Integer.toBinaryString(codeCounter);
-                        while (codeStr.length() < 32) {
+                        while (codeStr.length() < r) {
                             codeStr = "0".concat(codeStr);
                         }
                         symbolTable.put(sKey, codeStr);
                         codeCounter++;
                     }
+                    inputList.add(sKey);
                 }
             }
+
+            for (String key : symbolTable.keySet())
+            {
+                System.out.println("Key is " + key + " Value is: " + symbolTable.get(key));
+            }
+
             System.out.println(codeCounter + " initial codes written to table");
+            System.out.println("Size of input list: " + inputList.size());
 
             // LZW compression
-            Boolean first = true;
-            String s = "";
-            String c = "";
             int buffer = 0;
             int bitCounter = 0;
 
             // First write num of columns to file
             out.writeInt(columnCount);
+
             System.out.println(data[0].length + " columns");
-            for (int j = 0; j < 20; j++) {
-                for (int i = 0; i < data[j].length; i++) {
-                    if (first) {
-                        s = String.valueOf(data[j][0]);
-                        c = String.valueOf(data[j][1]);
-                        i = i + 1;
-                        first = false;
-                    } else {
-                        c = String.valueOf(data[j][i]);
-                    }
-                    String t = s.concat(",");
-                    t = t.concat(c);
-                    if ((symbolTable.get(t)) != null) {
-                        s = s.concat(",");
-                        s = s.concat(c);
-                    } else {
-                        String symbol = symbolTable.get(s);
-                        char[] ch = symbol.toCharArray();
-                        for (int k = 0; k < ch.length; k++) {
-                            if (bitCounter == 32) {
-                                out.writeInt(buffer);
-                                buffer = 0;
-                                bitCounter = 0;
-                                buffersWritten++;
-                            }
-                            buffer <<= 1;
-                            if (ch[k] == '0') {
-                                buffer |= 0;
-                            } else {
-                                buffer |= 1;
-                            }
-                            bitCounter++;
-                        }
-                        String codeStr = Integer.toBinaryString(codeCounter);
-                        while (codeStr.length() < 32) {
-                            codeStr = "0".concat(codeStr);
-                        }
-                        String n = s.concat(",");
-                        n = n.concat(c);
-                        symbolTable.put(s.concat(",").concat(c), codeStr);
-                        s = c;
-                        codeCounter++;
 
-                    }
+            String s = inputList.get(0);
+            String c = null;
+            System.out.println("first s: " + s);
+            for (int i = 1; i < inputList.size(); i++)
+            {
+                c = inputList.get(i);
+                if ((symbolTable.get(s.concat(",").concat(c))) != null)
+                {
+                    s = s.concat(",").concat(c);
                 }
+                else
+                {
+                    // Output code for s
+                    String code = symbolTable.get(s);
+                    char[] ch = code.toCharArray();
+                    for (int k = 0; k < ch.length; k++)
+                    {
+                        if (bitCounter == 32)
+                        {
+                            out.writeInt(buffer);
+                            buffer = 0;
+                            bitCounter = 0;
+                        }
 
+                        buffer <<= 1;
+                        if(ch[k] == '0')
+                            buffer |= 0;
+                        else
+                            buffer |= 1;
+                        bitCounter++;
+                    }
+
+                    // Add s+c to dict with new code
+                    String codeStr = Integer.toBinaryString(codeCounter);
+                    while (codeStr.length() < r) {
+                        codeStr = "0".concat(codeStr);
+                    }
+                    symbolTable.put(s.concat(",").concat(c), codeStr);
+                    codeCounter++;
+
+                    // s = c
+                    s = c;
+                }
             }
 
-            // finally, output s
-            String symbol = symbolTable.get(s);
-            System.out.println("Finally outputting s: " + symbol);
-            char[] ch = symbol.toCharArray();
-            for (int k = 0; k < ch.length; k++) {
-                if (bitCounter == 32) {
+            // Output code for s;
+            String code = symbolTable.get(s);
+            char[] ch = code.toCharArray();
+            for (int k = 0; k < ch.length; k++)
+            {
+                if (bitCounter == 32)
+                {
                     out.writeInt(buffer);
                     buffer = 0;
                     bitCounter = 0;
-                    buffersWritten++;
                 }
+
                 buffer <<= 1;
-                if (ch[k] == '0') {
+                if(ch[k] == '0')
                     buffer |= 0;
-                } else {
+                else
                     buffer |= 1;
-                }
                 bitCounter++;
             }
+
+            // Clear buffer if there's bits leftover
 
             if (bitCounter != 0) {
                 buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
                 out.writeInt(buffer);
-                buffersWritten++;
             }
 
         } catch (FileNotFoundException e) {
@@ -1077,9 +1083,6 @@ public class Main
         } catch (IOException e) {
             System.out.println("I/O binary write failure");
         }
-
-        System.out.println("Buffers written: " + buffersWritten);
-
         return symbolTable;
     }
 

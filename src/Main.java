@@ -34,6 +34,7 @@ public class Main
         int pc_scheme = 0;
         int closest_scheme = 0;
         int bits = 8;
+	int dictbits = 0;
         double ex = 0, ey = 0, ez = 0, ew = 0;
         int[] closestx;
         int[] closesty;
@@ -41,6 +42,7 @@ public class Main
         int[] closestw;
         HashMap<String,String> symbolTable = null;
         Node tree = null;
+	
         
         
         //Parse command line arguments
@@ -77,6 +79,10 @@ public class Main
                     pc_scheme = Integer.parseInt(args[i+1]);
                     i++;
                     break;
+	    case "-db":
+		dictbits = Integer.parseInt(args[i+1]);
+		i++;
+		break;
                 default:
                     System.err.println("Unrecognized flag");
                     return;
@@ -250,14 +256,14 @@ public class Main
                         fyn = output_root + "ydecode.csv";
                         fzn = output_root + "zdecode.csv";
                         fwn = output_root + "wdecode.csv";
-        		symbolTable = EO4(fx,bits, output_root + "xout");
-        		DO4(symbolTable,bits, output_root + "xout", fxn);
-        		symbolTable = EO4(fy,bits, output_root + "yout");
-        		DO4(symbolTable,bits, output_root + "yout", fyn);
-        		symbolTable = EO4(fz,bits, output_root + "zout");
-        		DO4(symbolTable,bits, output_root + "zout", fzn);
-        		symbolTable = EO4(fw,bits, output_root + "wout");
-        		DO4(symbolTable,bits, output_root + "wout", fwn);
+        		symbolTable = EO4(fx,dictbits, output_root + "xout");
+        		DO4(symbolTable,dictbits, output_root + "xout", fxn);
+        		symbolTable = EO4(fy,dictbits, output_root + "yout");
+        		DO4(symbolTable,dictbits, output_root + "yout", fyn);
+        		symbolTable = EO4(fz,dictbits, output_root + "zout");
+        		DO4(symbolTable,dictbits, output_root + "zout", fzn);
+        		symbolTable = EO4(fw,dictbits, output_root + "wout");
+        		DO4(symbolTable,dictbits, output_root + "wout", fwn);
 
         		break;
 
@@ -891,6 +897,7 @@ public class Main
         double data[][] = ReadData(series);
         HashMap<String, String> symbolTable = new HashMap();
         int symbolCounter = 0;
+	int codeCounter = 0;
 
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream(output));
@@ -899,16 +906,19 @@ public class Main
                     String sKey = String.valueOf(data[j][i]);
                     String s = symbolTable.get(sKey);
                     if (s == null) {
-                        String binStr = Integer.toBinaryString(symbolCounter);
+                        String binStr = Integer.toBinaryString(codeCounter);
                         while (binStr.length() < r) {
                             // Add leading zeroes back to binary representation                                                   
                             binStr = "0".concat(binStr);
                         }
                         symbolTable.put(sKey, binStr);
+			codeCounter++;
+
                     }
-                    symbolCounter++; // keeping track of how many symbols are written
+		    symbolCounter++; // keeping track of how many symbols are written
                     // should be 30*20
                 }
+
             }
 
             int bitCounter = 0;
@@ -942,7 +952,7 @@ public class Main
                 }
             }
 
-            // After writing everything, see if the integer is not fully packed
+
             if (bitCounter != 0) {
                 buffer <<= (32 - bitCounter); // move bits all the way to the left of the integer
                 out.writeInt(buffer);
@@ -964,14 +974,15 @@ public class Main
         int symbolsRead = 0;
         int buffer;
         int bitMask = 1 << 31;  //msb bitmask
-        int columnCount;
+        int columnCount = 0;
         int bitCounter = 0;
 
         try {
+	    double[][] data = null;
             DataInputStream dis = new DataInputStream(new FileInputStream(input));
             symbolCount = dis.readInt();
             columnCount = symbolCount / 20;
-            double[][] data = new double[20][columnCount];
+            data = new double[20][columnCount];
             Integer curInt;
             buffer = dis.readInt();
             for (int j = 0; j < 20; j++) {
@@ -998,15 +1009,16 @@ public class Main
                     // If found, write to array.
                     for (String key : symbolTable.keySet()) {
                         if ((symbolTable.get(key)).equals(symbol)) {
-                            System.out.println("Casting to double: " + key);
-                            data[j][i] = Double.parseDouble(key);
+			    data[j][i] = Double.parseDouble(key);
                             symbolsRead++;
                             break;
                         }
                     }
+
                 }
             }
-            WriteData(data, output);
+	    WriteData(data, output);
+
         } catch (EOFException e) {
             System.out.println("End of file.");
             System.out.println(symbolsRead + " symbols read.");
@@ -1392,6 +1404,12 @@ public class Main
 
     public static HashMap<String, String> EO4(String series, int r, String output) 
     {
+	if (r == 0){
+	    System.out.println("Did not specify how many bits in dictionary");
+		return null;
+	}
+
+		
         double data[][] = ReadData(series);
         HashMap<String, String> symbolTable = new HashMap();
         int symbolCounter = 0;
@@ -1501,6 +1519,12 @@ public class Main
 
     public static double DO4(HashMap<String, String> symbolTable, int r, String input, String output) 
     {
+	if (r == 0)
+	    {
+		System.out.println("did not specify how many bits in dictionary.");
+		return 0;
+	    }
+
         int buffer;
         int bitMask = 1 << 31;
         int columnCount = 0;
